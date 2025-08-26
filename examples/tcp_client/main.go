@@ -20,7 +20,11 @@ func main() {
 	if err := client.Connect(); err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("Error closing client: %v", err)
+		}
+	}()
 
 	fmt.Println("Connected successfully!")
 

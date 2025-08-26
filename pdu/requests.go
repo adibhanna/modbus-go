@@ -150,7 +150,6 @@ func MaskWriteRegisterRequest(address modbus.Address, andMask, orMask uint16) (*
 // ReadWriteMultipleRegistersRequest creates a PDU for read/write multiple registers
 func ReadWriteMultipleRegistersRequest(readAddress modbus.Address, readQuantity modbus.Quantity,
 	writeAddress modbus.Address, writeValues []uint16) (*Request, error) {
-
 	if readQuantity < 1 || readQuantity > modbus.MaxReadWriteRegs {
 		return nil, fmt.Errorf("invalid read quantity %d: must be 1-%d", readQuantity, modbus.MaxReadWriteRegs)
 	}

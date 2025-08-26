@@ -238,7 +238,6 @@ func (c *Client) MaskWriteRegister(address modbus.Address, andMask, orMask uint1
 // ReadWriteMultipleRegisters reads and writes registers in one transaction (function code 0x17)
 func (c *Client) ReadWriteMultipleRegisters(readAddress modbus.Address, readQuantity modbus.Quantity,
 	writeAddress modbus.Address, writeValues []uint16) ([]uint16, error) {
-
 	req, err := pdu.ReadWriteMultipleRegistersRequest(readAddress, readQuantity, writeAddress, writeValues)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create read/write multiple registers request: %w", err)

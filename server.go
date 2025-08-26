@@ -2,6 +2,7 @@ package modbus
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -507,7 +508,8 @@ func (h *ServerRequestHandler) handleReadCoils(req *pdu.Request) *pdu.Response {
 
 	values, err := h.dataStore.ReadCoils(modbus.Address(address), modbus.Quantity(quantity))
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -532,7 +534,8 @@ func (h *ServerRequestHandler) handleReadDiscreteInputs(req *pdu.Request) *pdu.R
 
 	values, err := h.dataStore.ReadDiscreteInputs(modbus.Address(address), modbus.Quantity(quantity))
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -557,7 +560,8 @@ func (h *ServerRequestHandler) handleReadHoldingRegisters(req *pdu.Request) *pdu
 
 	values, err := h.dataStore.ReadHoldingRegisters(modbus.Address(address), modbus.Quantity(quantity))
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -582,7 +586,8 @@ func (h *ServerRequestHandler) handleReadInputRegisters(req *pdu.Request) *pdu.R
 
 	values, err := h.dataStore.ReadInputRegisters(modbus.Address(address), modbus.Quantity(quantity))
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -613,7 +618,8 @@ func (h *ServerRequestHandler) handleWriteSingleCoil(req *pdu.Request) *pdu.Resp
 	coilValue := value == modbus.CoilOn
 	err := h.dataStore.WriteCoils(modbus.Address(address), []bool{coilValue})
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -634,7 +640,8 @@ func (h *ServerRequestHandler) handleWriteSingleRegister(req *pdu.Request) *pdu.
 
 	err := h.dataStore.WriteHoldingRegisters(modbus.Address(address), []uint16{value})
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -661,7 +668,8 @@ func (h *ServerRequestHandler) handleWriteMultipleCoils(req *pdu.Request) *pdu.R
 	values := pdu.DecodeBoolSlice(req.Data[5:], int(quantity))
 	err := h.dataStore.WriteCoils(modbus.Address(address), values)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -696,7 +704,8 @@ func (h *ServerRequestHandler) handleWriteMultipleRegisters(req *pdu.Request) *p
 
 	err = h.dataStore.WriteHoldingRegisters(modbus.Address(address), values)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -723,7 +732,8 @@ func (h *ServerRequestHandler) handleMaskWriteRegister(req *pdu.Request) *pdu.Re
 	// Read current value
 	currentValues, err := h.dataStore.ReadHoldingRegisters(modbus.Address(address), 1)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -736,7 +746,8 @@ func (h *ServerRequestHandler) handleMaskWriteRegister(req *pdu.Request) *pdu.Re
 	// Write back
 	err = h.dataStore.WriteHoldingRegisters(modbus.Address(address), []uint16{result})
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -770,7 +781,8 @@ func (h *ServerRequestHandler) handleReadWriteMultipleRegisters(req *pdu.Request
 
 	err = h.dataStore.WriteHoldingRegisters(modbus.Address(writeAddress), writeValues)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -779,7 +791,8 @@ func (h *ServerRequestHandler) handleReadWriteMultipleRegisters(req *pdu.Request
 	// Then read
 	readValues, err := h.dataStore.ReadHoldingRegisters(modbus.Address(readAddress), modbus.Quantity(readQuantity))
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -851,7 +864,8 @@ func (h *ServerRequestHandler) handleReadDeviceIdentification(req *pdu.Request) 
 func (h *ServerRequestHandler) handleReadExceptionStatus(req *pdu.Request) *pdu.Response {
 	status, err := h.dataStore.ReadExceptionStatus()
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -874,7 +888,8 @@ func (h *ServerRequestHandler) handleDiagnostic(req *pdu.Request) *pdu.Response 
 
 	result, err := h.dataStore.GetDiagnosticData(subFunction, data)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -891,7 +906,8 @@ func (h *ServerRequestHandler) handleDiagnostic(req *pdu.Request) *pdu.Response 
 func (h *ServerRequestHandler) handleGetCommEventCounter(req *pdu.Request) *pdu.Response {
 	status, eventCount, err := h.dataStore.GetCommEventCounter()
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -908,7 +924,8 @@ func (h *ServerRequestHandler) handleGetCommEventCounter(req *pdu.Request) *pdu.
 func (h *ServerRequestHandler) handleGetCommEventLog(req *pdu.Request) *pdu.Response {
 	status, eventCount, messageCount, events, err := h.dataStore.GetCommEventLog()
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -970,7 +987,8 @@ func (h *ServerRequestHandler) handleReadFileRecord(req *pdu.Request) *pdu.Respo
 	// Read the file records
 	resultRecords, err := h.dataStore.ReadFileRecords(records)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -1039,7 +1057,8 @@ func (h *ServerRequestHandler) handleWriteFileRecord(req *pdu.Request) *pdu.Resp
 	// Write the file records
 	err := h.dataStore.WriteFileRecords(records)
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)
@@ -1059,7 +1078,8 @@ func (h *ServerRequestHandler) handleReadFIFOQueue(req *pdu.Request) *pdu.Respon
 
 	values, err := h.dataStore.ReadFIFOQueue(modbus.Address(address))
 	if err != nil {
-		if modbusErr, ok := err.(*modbus.ModbusError); ok {
+		var modbusErr *modbus.ModbusError
+		if errors.As(err, &modbusErr) {
 			return pdu.NewExceptionResponse(req.FunctionCode, modbusErr.ExceptionCode)
 		}
 		return pdu.NewExceptionResponse(req.FunctionCode, modbus.ExceptionCodeServerDeviceFailure)

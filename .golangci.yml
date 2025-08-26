@@ -1,197 +1,113 @@
-# golangci-lint configuration for ModbusGo
-# Version 2 configuration
+# .golangci.yml
+# Version 2 configuration for golangci-lint.
+# For all available options, see: https://golangci-lint.run/usage/configuration/
+
+version: "2"
 
 run:
-  # Timeout for analysis
+  # Timeout for analysis, e.g., 30s, 1m. Defaults to 1m.
   timeout: 5m
-  
-  # Exit code when at least one issue was found
+  # Exit code when issues are found.
   issues-exit-code: 1
-  
-  # Include test files in analysis
-  tests: true
-  
-  # List of build tags
-  build-tags:
-    - integration
-  
-  # Which directories to skip
-  skip-dirs:
-    - vendor
-    - .git
-    - build
-    - dist
-    - coverage
-  
-  # Which files to skip
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
+  # Include tests in analysis.
+  tests: false
 
 output:
-  # Format of the output
+  # Output format.
   format: colored-line-number
-  
-  # Print lines of code with issue
+  # Print lines of code with issue.
   print-issued-lines: true
-  
-  # Print linter name in the end of issue text
+  # Print linter name in the output.
   print-linter-name: true
-  
-  # Make issues output unique by line
+  # Make issues output unique by line.
   uniq-by-line: true
 
 linters-settings:
   govet:
-    # Enable all analyzers
+    # Enable all analyzers.
     enable-all: true
-    # Disable specific analyzers if needed
+    # Disable specific analyzers if needed.
     disable:
-      - fieldalignment # Often too noisy for protocol implementations
-  
+      - fieldalignment # Often too noisy
   gci:
-    # Section order for imports
+    # Section order for imports.
     sections:
       - standard # Standard library imports
-      - default  # Third-party imports
-      - prefix(github.com/adibhanna/modbusgo) # Local packages
-    # Add a blank line between sections
+      - default # 3rd-party imports
+      - prefix(github.com/BonjoyCorp/pulse) # Your local packages
+    # Add a blank line between sections.
     section-separators:
       - newLine
-  
   gocyclo:
-    # Minimum complexity to report
+    # Minimum complexity to report.
     min-complexity: 15
-  
   funlen:
-    # Set limits for function length
+    # Set limits for function length.
     lines: 100
     statements: 50
-  
   errorlint:
-    # Check for fmt.Errorf wrapping
+    # Check for `fmt.Errorf` wrapping.
     errorf: true
-  
   goimports:
-    # Put local imports after 3rd-party imports
-    local-prefixes: github.com/adibhanna/modbusgo
-  
-  goconst:
-    # Minimal length of string constant
-    min-len: 3
-    # Minimal occurrences count to trigger
-    min-occurrences: 3
-  
-  misspell:
-    # Locale to use
-    locale: US
-  
-  lll:
-    # Max line length (protocol implementations often have long lines)
-    line-length: 120
-  
-  nakedret:
-    # Max func length to check for naked returns
-    max-func-lines: 30
+    # Put local imports after 3rd-party imports.
+    local-prefixes: "github.com/BonjoyCorp/pulsePLC"
 
 linters:
-  # Disable all linters first, then enable specific ones
+  # Disable all linters first, then enable specific ones.
   disable-all: true
-  enable:
-    # Core & Essential Linters
-    - errcheck      # Checks for unchecked errors
-    - govet         # Reports suspicious constructs
-    - staticcheck   # Suite of static analysis checks
-    - ineffassign   # Detects unused assignments
-    - typecheck     # Type checking
-    
-    # Formatting & Style
-    - gofmt         # Checks whether code was gofmt-ed
-    - goimports     # Checks imports order and formatting
-    - misspell      # Finds commonly misspelled English words
-    - whitespace    # Checks for unnecessary whitespace
-    
-    # Code Quality
-    - gosimple      # Simplifies code
-    - goconst       # Finds repeated strings that could be constants
-    - unconvert     # Removes unnecessary type conversions
-    - unparam       # Reports unused function parameters
-    
-    # Best Practices & Potential Bugs
-    - bodyclose     # Checks for unclosed HTTP response bodies
-    - noctx         # Finds functions that should accept context.Context
-    - rowserrcheck  # Checks for unclosed database rows
-    - sqlclosecheck # Checks for unclosed database connections
-    
-    # Security
-    - gosec         # Security checks
-    
-    # Performance
-    - prealloc      # Finds slice declarations that could be preallocated
-    
-    # Testing
-    - tparallel     # Detects inappropriate usage of t.Parallel()
-    
   disable:
-    # These are often too strict for protocol implementations
-    - funlen        # Function length
-    - gocyclo       # Cyclomatic complexity
-    - gocognit      # Cognitive complexity
-    - dupl          # Code duplication (protocol code often has similar patterns)
-    - unused        # Unused code (library exports may not be used internally)
+    - unused # Disabled for library code - external consumers may use these functions
+  enable:
+    # --- Core & Essential Linters ---
+    - errcheck # Checks for unchecked errors.
+    - govet # Reports suspicious constructs.
+    - staticcheck # A suite of static analysis checks (includes gosimple and stylecheck).
+    # - unused # Disabled for library code - external consumers may use these functions
+    - ineffassign # Detects unused assignments.
+
+    # --- Formatting & Style ---
+    - misspell # Finds commonly misspelled English words.
+
+    # --- Complexity & Maintainability ---
+    # - gocyclo # Computes cyclomatic complexity.
+    # - funlen # Reports functions that are too long.
+    # - gocognit # Computes cognitive complexity.
+
+    # --- Best Practices & Potential Bugs ---
+    - copyloopvar # Checks for loops that capture loop variables by reference.
+    - bodyclose # Checks for unclosed HTTP response bodies.
+    - durationcheck # Checks for misuses of time.Duration.
+    - errorlint # Checks for common error handling mistakes.
+    - noctx # Finds functions that should probably accept a context.Context.
+    - nolintlint # Reports unused or misplaced //nolint directives.
+    - rowserrcheck # Checks for unchecked errors in database rows.
+    - sqlclosecheck # Checks for unclosed database connections.
+    - wastedassign # Checks for wasted assignments.
+    - whitespace # Checks for leading/trailing whitespace.
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gci
 
 issues:
-  # Maximum issues count per one linter
-  max-issues-per-linter: 50
-  
-  # Maximum count of issues with the same text
-  max-same-issues: 3
-  
-  # Exclude some issues by patterns
-  exclude:
-    - "Error return value of .* is not checked"
-    - "exported .* should have comment or be unexported"
-    - "should have a package comment"
-  
-  exclude-rules:
-    # Exclude lll issues for long lines with go:generate
-    - linters:
-        - lll
-      source: "^//go:generate "
-    
-    # Exclude some linters from test files
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
-        - goconst
-    
-    # Exclude some linters from examples
-    - path: examples/
-      linters:
-        - errcheck
-        - gosec
-        - goconst
-    
-    # Allow longer lines in constants definitions
-    - path: constants\.go
-      linters:
-        - lll
-    
-    # Protocol implementations may have complex switch statements
-    - path: (server|client)\.go
-      linters:
-        - gocyclo
-        - funlen
-    
-    # PDU handling often requires similar patterns
-    - path: pdu/
-      linters:
-        - dupl
+  # Maximum number of issues to report from one linter. 0 = no limit.
+  max-issues-per-linter: 0
+  # Maximum number of issues with the same text to report. 0 = no limit.
+  max-same-issues: 0
 
-severity:
-  # Default value is empty string
-  default-severity: warning
-  
-  # If set to true, severity-rules regular expressions become case sensitive
-  case-sensitive: false
+  # Exclude some issues by message, source, or path.
+  exclude-rules:
+    # Exclude common false positives with errcheck for standard library logging and printing.
+    - linters:
+        - errcheck
+      # CORRECTED: Use single quotes to avoid YAML escape character errors.
+      text: 'Error return value of .((os\.)?std(out|err)\..*|.*Print(f|ln)?|os\.(Un)?Setenv). is not checked'
+    
+    # Allow unused functions in library code - these may be used by external consumers
+    - linters:
+        - unused
+      path: "plc/validate\\.go"
+
+

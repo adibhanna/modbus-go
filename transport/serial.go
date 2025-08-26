@@ -6,10 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"go.bug.st/serial"
-
 	"github.com/adibhanna/modbusgo/modbus"
 	"github.com/adibhanna/modbusgo/pdu"
+	"go.bug.st/serial"
 )
 
 // SerialConfig holds serial port configuration
@@ -90,7 +89,7 @@ func (t *RTUTransport) Connect() error {
 
 	// Set read timeout
 	if err := port.SetReadTimeout(t.config.Timeout); err != nil {
-		port.Close()
+		_ = port.Close()
 		return fmt.Errorf("failed to set read timeout: %w", err)
 	}
 
@@ -120,7 +119,7 @@ func (t *RTUTransport) IsConnected() bool {
 func (t *RTUTransport) SetTimeout(timeout time.Duration) {
 	t.config.Timeout = timeout
 	if t.connected && t.port != nil {
-		t.port.SetReadTimeout(timeout)
+		_ = t.port.SetReadTimeout(timeout)
 	}
 }
 
@@ -164,7 +163,7 @@ func (t *RTUTransport) SendRequest(slaveID modbus.SlaveID, request *pdu.Request)
 
 	for {
 		// Set short timeout for individual reads
-		t.port.SetReadTimeout(interCharTimeout)
+		_ = t.port.SetReadTimeout(interCharTimeout)
 
 		n, err := t.port.Read(buf)
 		if err != nil {
@@ -271,7 +270,7 @@ func (t *ASCIITransport) Connect() error {
 	}
 
 	if err := port.SetReadTimeout(t.config.Timeout); err != nil {
-		port.Close()
+		_ = port.Close()
 		return fmt.Errorf("failed to set read timeout: %w", err)
 	}
 
@@ -301,7 +300,7 @@ func (t *ASCIITransport) IsConnected() bool {
 func (t *ASCIITransport) SetTimeout(timeout time.Duration) {
 	t.config.Timeout = timeout
 	if t.connected && t.port != nil {
-		t.port.SetReadTimeout(timeout)
+		_ = t.port.SetReadTimeout(timeout)
 	}
 }
 

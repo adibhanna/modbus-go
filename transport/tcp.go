@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -278,14 +279,9 @@ func NewTCPServer(address string, handler RequestHandler) *TCPServer {
 
 // Start starts the TCP server
 func (s *TCPServer) Start() error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if s.running {
-		return fmt.Errorf("server already running")
-	}
-
-	listener, err := net.Listen("tcp", s.address)
+	// Start listening
+	lc := net.ListenConfig{}
+	listener, err := lc.Listen(context.Background(), "tcp", s.address)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", s.address, err)
 	}
@@ -311,12 +307,15 @@ func (s *TCPServer) Stop() error {
 	s.running = false
 
 	if s.listener != nil {
-		s.listener.Close()
+		if err := s.listener.Close(); err != nil {
+			// Log error but don't fail stop
+			fmt.Printf("Warning: error closing listener: %v\n", err)
+		}
 	}
 
 	// Close all active connections
 	for conn := range s.connections {
-		conn.Close()
+		_ = conn.Close() // Best effort close, ignore errors
 	}
 	s.connections = make(map[net.Conn]bool)
 
@@ -358,7 +357,7 @@ func (s *TCPServer) acceptLoop() {
 // handleConnection handles a single connection
 func (s *TCPServer) handleConnection(conn net.Conn) {
 	defer func() {
-		conn.Close()
+		_ = conn.Close() // Best effort close, ignore errors
 		s.mutex.Lock()
 		delete(s.connections, conn)
 		s.mutex.Unlock()

@@ -59,28 +59,28 @@ func main() {
 func initializeExampleData(ds *modbus.DefaultDataStore) {
 	// Set some initial holding registers
 	for i := 0; i < 10; i++ {
-		ds.SetHoldingRegister(modbustypes.Address(i), uint16(1000+i))
+		_ = ds.SetHoldingRegister(modbustypes.Address(i), uint16(1000+i))
 	}
 
 	// Set some initial input registers
 	for i := 0; i < 10; i++ {
-		ds.SetInputRegister(modbustypes.Address(i), uint16(2000+i))
+		_ = ds.SetInputRegister(modbustypes.Address(i), uint16(2000+i))
 	}
 
 	// Initialize some coils
-	ds.SetCoil(0, true)
-	ds.SetCoil(1, false)
-	ds.SetCoil(2, true)
+	_ = ds.SetCoil(0, true)
+	_ = ds.SetCoil(1, false)
+	_ = ds.SetCoil(2, true)
 
 	// Set exception status
 	ds.SetExceptionStatus(0x00) // All OK
 
 	// Initialize FIFO queues
 	fifoData1 := []uint16{100, 200, 300, 400, 500}
-	ds.WriteFIFOQueue(1000, fifoData1)
+	_ = ds.WriteFIFOQueue(1000, fifoData1)
 
 	fifoData2 := []uint16{0xABCD, 0x1234, 0x5678}
-	ds.WriteFIFOQueue(2000, fifoData2)
+	_ = ds.WriteFIFOQueue(2000, fifoData2)
 
 	// Initialize file records
 	fileRecords := []modbustypes.FileRecord{
@@ -133,15 +133,15 @@ func periodicDataUpdates(ds *modbus.DefaultDataStore) {
 
 		// Simulate temperature reading
 		temperature := uint16(2000 + (counter % 100))
-		ds.SetInputRegister(100, temperature)
+		_ = ds.SetInputRegister(100, temperature)
 
 		// Simulate pressure reading
 		pressure := uint16(1000 + (counter % 50))
-		ds.SetInputRegister(101, pressure)
+		_ = ds.SetInputRegister(101, pressure)
 
 		// Simulate flow rate
 		flowRate := uint16(500 + (counter % 200))
-		ds.SetInputRegister(102, flowRate)
+		_ = ds.SetInputRegister(102, flowRate)
 
 		// Increment diagnostic counters
 		ds.IncrementDiagnosticCounter("BusMessage")
@@ -159,7 +159,7 @@ func periodicDataUpdates(ds *modbus.DefaultDataStore) {
 		// Update FIFO queue with new data
 		if counter%5 == 0 {
 			newFIFO := []uint16{counter, counter + 1, counter + 2}
-			ds.WriteFIFOQueue(3000, newFIFO)
+			_ = ds.WriteFIFOQueue(3000, newFIFO)
 		}
 
 		log.Printf("Updated: Temperature=%d, Pressure=%d, FlowRate=%d, Counter=%d",

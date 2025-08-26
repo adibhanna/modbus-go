@@ -22,22 +22,30 @@ func main() {
 
 	// Set some coils
 	for i := 0; i < 10; i++ {
-		dataStore.SetCoil(modbus.Address(i), i%2 == 0)
+		if err := dataStore.SetCoil(modbus.Address(i), i%2 == 0); err != nil {
+			log.Printf("Warning: failed to set coil %d: %v", i, err)
+		}
 	}
 
 	// Set some discrete inputs
 	for i := 0; i < 10; i++ {
-		dataStore.SetDiscreteInput(modbus.Address(i), i%3 == 0)
+		if err := dataStore.SetDiscreteInput(modbus.Address(i), i%3 == 0); err != nil {
+			log.Printf("Warning: failed to set discrete input %d: %v", i, err)
+		}
 	}
 
 	// Set some holding registers with test pattern
 	for i := 0; i < 20; i++ {
-		dataStore.SetHoldingRegister(modbus.Address(i), uint16(i*100))
+		if err := dataStore.SetHoldingRegister(modbus.Address(i), uint16(i*100)); err != nil {
+			log.Printf("Warning: failed to set holding register %d: %v", i, err)
+		}
 	}
 
 	// Set some input registers
 	for i := 0; i < 20; i++ {
-		dataStore.SetInputRegister(modbus.Address(i), uint16(i*10+5))
+		if err := dataStore.SetInputRegister(modbus.Address(i), uint16(i*10+5)); err != nil {
+			log.Printf("Warning: failed to set input register %d: %v", i, err)
+		}
 	}
 
 	// Create and start the server
@@ -71,10 +79,15 @@ func main() {
 		for range ticker.C {
 			counter++
 			// Update register 999 with an incrementing counter
-			dataStore.SetHoldingRegister(999, counter)
+			if err := dataStore.SetHoldingRegister(999, counter); err != nil {
+				log.Printf("Failed to update holding register: %v", err)
+			} else {
+				log.Printf("Updated holding register 999 to %d", counter)
+			}
 
-			// Toggle coil 999
-			dataStore.SetCoil(999, counter%2 == 0)
+			if err := dataStore.SetCoil(999, counter%2 == 0); err != nil {
+				log.Printf("Failed to update coil: %v", err)
+			}
 
 			fmt.Printf("Updated test values: register[999]=%d, coil[999]=%t\n",
 				counter, counter%2 == 0)
