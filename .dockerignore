@@ -1,0 +1,38 @@
+# Git files
+.git
+.gitignore
+.github/
+
+# Build artifacts
+build/
+dist/
+coverage/
+*.out
+*.prof
+*.test
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.pdf
+
+# Test files
+test_integration.sh
+*_test.go
+
+# Vendor (will be downloaded in Docker)
+vendor/
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore

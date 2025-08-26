@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Run tests
+        run: go test -v -race ./...
+
+      - name: Get the version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build release artifacts
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          mkdir -p dist
+          
+          # Build for multiple platforms
+          for GOOS in linux darwin windows; do
+            for GOARCH in amd64 arm64; do
+              # Skip Windows ARM64 for now
+              if [ "$GOOS" = "windows" ] && [ "$GOARCH" = "arm64" ]; then
+                continue
+              fi
+              
+              echo "Building for $GOOS/$GOARCH..."
+              OUTPUT_NAME="modbusgo-$VERSION-$GOOS-$GOARCH"
+              
+              # Create directory for this build
+              mkdir -p "dist/$OUTPUT_NAME"
+              
+              # Copy documentation
+              cp README.md DOCUMENTATION.md API_REFERENCE.md LICENSE "dist/$OUTPUT_NAME/"
+              
+              # Build examples
+              for example in examples/*/; do
+                if [ -f "$example/main.go" ]; then
+                  EXAMPLE_NAME=$(basename "$example")
+                  EXT=""
+                  if [ "$GOOS" = "windows" ]; then
+                    EXT=".exe"
+                  fi
+                  
+                  GOOS=$GOOS GOARCH=$GOARCH go build -v \
+                    -ldflags "-X main.Version=$VERSION" \
+                    -o "dist/$OUTPUT_NAME/$EXAMPLE_NAME$EXT" \
+                    "$example/main.go"
+                fi
+              done
+              
+              # Create archive
+              if [ "$GOOS" = "windows" ]; then
+                cd dist && zip -r "$OUTPUT_NAME.zip" "$OUTPUT_NAME" && cd ..
+              else
+                cd dist && tar -czf "$OUTPUT_NAME.tar.gz" "$OUTPUT_NAME" && cd ..
+              fi
+              
+              # Remove directory after archiving
+              rm -rf "dist/$OUTPUT_NAME"
+            done
+          done
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          git log --pretty=format:"* %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## ModbusGo ${{ steps.get_version.outputs.VERSION }}
+            
+            ### Changes
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ### Downloads
+            Download the appropriate archive for your platform below.
+            
+            ### Documentation
+            - [Complete Documentation](https://github.com/adibhanna/modbusgo/blob/main/DOCUMENTATION.md)
+            - [API Reference](https://github.com/adibhanna/modbusgo/blob/main/API_REFERENCE.md)
+            
+            ### Installation
+            ```bash
+            go get github.com/adibhanna/modbusgo@${{ steps.get_version.outputs.VERSION }}
+            ```
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}
+
+      - name: Update Go Module Proxy
+        run: |
+          GOPROXY=proxy.golang.org go list -m github.com/adibhanna/modbusgo@${{ steps.get_version.outputs.VERSION }}

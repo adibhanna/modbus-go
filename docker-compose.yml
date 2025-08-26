@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # MODBUS TCP Server
+  modbus-server:
+    build: .
+    container_name: modbus-server
+    ports:
+      - "502:502"
+      - "5502:5502"
+    environment:
+      - LOG_LEVEL=info
+    command: /app/bin/advanced_server
+    restart: unless-stopped
+    networks:
+      - modbus-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5502"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - modbus-data:/app/data
+
+  # MODBUS TCP Client (for testing)
+  modbus-client:
+    build: .
+    container_name: modbus-client
+    depends_on:
+      modbus-server:
+        condition: service_healthy
+    environment:
+      - MODBUS_SERVER=modbus-server:5502
+      - LOG_LEVEL=debug
+    command: |
+      sh -c "
+        while true; do
+          echo 'Running MODBUS client test...'
+          /app/bin/tcp_client
+          sleep 30
+        done
+      "
+    networks:
+      - modbus-network
+
+  # Simple TCP Server
+  simple-server:
+    build: .
+    container_name: simple-modbus-server
+    ports:
+      - "5503:5502"
+    command: /app/bin/tcp_server
+    restart: unless-stopped
+    networks:
+      - modbus-network
+
+networks:
+  modbus-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  modbus-data:
+    driver: local
