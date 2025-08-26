@@ -3,7 +3,7 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/adibhanna/modbusgo/modbus"
+	"github.com/adibhanna/modbus-go/modbus"
 )
 
 // ParseReadCoilsResponse parses a response PDU for read coils

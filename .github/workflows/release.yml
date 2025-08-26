@@ -105,12 +105,12 @@ jobs:
             Download the appropriate archive for your platform below.
             
             ### Documentation
-            - [Complete Documentation](https://github.com/adibhanna/modbusgo/blob/main/DOCUMENTATION.md)
-            - [API Reference](https://github.com/adibhanna/modbusgo/blob/main/API_REFERENCE.md)
+            - [Complete Documentation](https://github.com/adibhanna/modbus-go/blob/main/DOCUMENTATION.md)
+            - [API Reference](https://github.com/adibhanna/modbus-go/blob/main/API_REFERENCE.md)
             
             ### Installation
             ```bash
-            go get github.com/adibhanna/modbusgo@${{ steps.get_version.outputs.VERSION }}
+            go get github.com/adibhanna/modbus-go@${{ steps.get_version.outputs.VERSION }}
             ```
           files: |
             dist/*.tar.gz
@@ -120,4 +120,4 @@ jobs:
 
       - name: Update Go Module Proxy
         run: |
-          GOPROXY=proxy.golang.org go list -m github.com/adibhanna/modbusgo@${{ steps.get_version.outputs.VERSION }}
+          GOPROXY=proxy.golang.org go list -m github.com/adibhanna/modbus-go@${{ steps.get_version.outputs.VERSION }}

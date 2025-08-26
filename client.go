@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/adibhanna/modbusgo/modbus"
-	"github.com/adibhanna/modbusgo/pdu"
-	"github.com/adibhanna/modbusgo/transport"
+	"github.com/adibhanna/modbus-go/modbus"
+	"github.com/adibhanna/modbus-go/pdu"
+	"github.com/adibhanna/modbus-go/transport"
 )
 
 // Client represents a MODBUS client

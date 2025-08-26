@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/adibhanna/modbusgo/modbus"
-	"github.com/adibhanna/modbusgo/pdu"
-	"github.com/adibhanna/modbusgo/transport"
+	"github.com/adibhanna/modbus-go/modbus"
+	"github.com/adibhanna/modbus-go/pdu"
+	"github.com/adibhanna/modbus-go/transport"
 )
 
 // Server represents a MODBUS server

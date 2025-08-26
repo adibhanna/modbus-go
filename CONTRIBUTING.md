@@ -34,7 +34,7 @@ By participating in this project, you agree to abide by our Code of Conduct:
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/adibhanna/modbusgo.git
+   git remote add upstream https://github.com/adibhanna/modbus-go.git
    ```
 4. **Create a branch** for your changes:
    ```bash

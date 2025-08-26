@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/adibhanna/modbusgo/modbus"
-	"github.com/adibhanna/modbusgo/pdu"
+	"github.com/adibhanna/modbus-go/modbus"
+	"github.com/adibhanna/modbus-go/pdu"
 )
 
 func TestDefaultDataStore(t *testing.T) {

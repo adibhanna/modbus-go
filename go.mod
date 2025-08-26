@@ -1,4 +1,4 @@
-module github.com/adibhanna/modbusgo
+module github.com/adibhanna/modbus-go
 
 go 1.21
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adibhanna/modbusgo/modbus"
-	"github.com/adibhanna/modbusgo/pdu"
+	"github.com/adibhanna/modbus-go/modbus"
+	"github.com/adibhanna/modbus-go/pdu"
 	"go.bug.st/serial"
 )
 

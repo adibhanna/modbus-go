@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	modbus "github.com/adibhanna/modbusgo"
+	modbus "github.com/adibhanna/modbus-go"
 )
 
 func main() {

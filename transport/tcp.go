@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/adibhanna/modbusgo/modbus"
-	"github.com/adibhanna/modbusgo/pdu"
+	"github.com/adibhanna/modbus-go/modbus"
+	"github.com/adibhanna/modbus-go/pdu"
 )
 
 // MBAP header structure for MODBUS TCP/IP

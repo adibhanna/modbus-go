@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	modbus "github.com/adibhanna/modbusgo"
-	modbustypes "github.com/adibhanna/modbusgo/modbus"
-	"github.com/adibhanna/modbusgo/transport"
+	modbus "github.com/adibhanna/modbus-go"
+	modbustypes "github.com/adibhanna/modbus-go/modbus"
+	"github.com/adibhanna/modbus-go/transport"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 		VendorName:          "ModbusGo Advanced",
 		ProductCode:         "MGA-001",
 		MajorMinorRevision:  "2.0.0",
-		VendorURL:           "https://github.com/adibhanna/modbusgo",
+		VendorURL:           "https://github.com/adibhanna/modbus-go",
 		ProductName:         "Advanced MODBUS Server",
 		ModelName:           "AGS-2024",
 		UserApplicationName: "Industrial Control System",

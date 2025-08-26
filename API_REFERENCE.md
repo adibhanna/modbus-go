@@ -3,7 +3,7 @@
 ## Package Structure
 
 ```
-github.com/adibhanna/modbusgo
+github.com/adibhanna/modbus-go
 ├── modbus/       # Core types and constants
 ├── pdu/          # Protocol Data Unit handling
 └── transport/    # Transport implementations

@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/adibhanna/modbusgo/modbus"
+	"github.com/adibhanna/modbus-go/modbus"
 )
 
 // PDU represents a MODBUS Protocol Data Unit

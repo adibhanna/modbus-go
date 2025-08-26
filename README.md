@@ -22,7 +22,7 @@ A comprehensive, production-ready MODBUS implementation in Go supporting the com
 ## 📦 Installation
 
 ```bash
-go get github.com/adibhanna/modbusgo
+go get github.com/adibhanna/modbus-go
 ```
 
 ## 🚀 Quick Start
@@ -35,7 +35,7 @@ package main
 import (
     "fmt"
     "log"
-    modbus "github.com/adibhanna/modbusgo"
+    modbus "github.com/adibhanna/modbus-go"
 )
 
 func main() {
@@ -69,7 +69,7 @@ package main
 
 import (
     "log"
-    modbus "github.com/adibhanna/modbusgo"
+    modbus "github.com/adibhanna/modbus-go"
 )
 
 func main() {
@@ -250,5 +250,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation**: See [DOCUMENTATION.md](DOCUMENTATION.md)
 - **API Reference**: See [API_REFERENCE.md](API_REFERENCE.md)
-- **Issues**: [GitHub Issues](https://github.com/adibhanna/modbusgo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/adibhanna/modbusgo/discussions)
+- **Issues**: [GitHub Issues](https://github.com/adibhanna/modbus-go/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/adibhanna/modbus-go/discussions)

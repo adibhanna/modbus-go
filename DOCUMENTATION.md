@@ -30,7 +30,7 @@ ModbusGo is a comprehensive, production-ready MODBUS protocol implementation in 
 ### Installation
 
 ```bash
-go get github.com/adibhanna/modbusgo
+go get github.com/adibhanna/modbus-go
 ```
 
 ## Architecture Overview
@@ -73,7 +73,7 @@ package main
 import (
     "fmt"
     "log"
-    modbus "github.com/adibhanna/modbusgo"
+    modbus "github.com/adibhanna/modbus-go"
 )
 
 func main() {
@@ -101,7 +101,7 @@ package main
 
 import (
     "log"
-    modbus "github.com/adibhanna/modbusgo"
+    modbus "github.com/adibhanna/modbus-go"
 )
 
 func main() {
@@ -1255,4 +1255,4 @@ The library is suitable for:
 - Energy management systems
 - Testing and simulation tools
 
-For additional support or contributions, please visit the [GitHub repository](https://github.com/adibhanna/modbusgo).
+For additional support or contributions, please visit the [GitHub repository](https://github.com/adibhanna/modbus-go).
