@@ -72,7 +72,6 @@ linters:
     # - gocognit # Computes cognitive complexity.
 
     # --- Best Practices & Potential Bugs ---
-    - copyloopvar # Checks for loops that capture loop variables by reference.
     - bodyclose # Checks for unclosed HTTP response bodies.
     - durationcheck # Checks for misuses of time.Duration.
     - errorlint # Checks for common error handling mistakes.
