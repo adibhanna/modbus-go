@@ -48,6 +48,8 @@ By participating in this project, you agree to abide by our Code of Conduct:
 - **Bug Fixes**: Fix issues reported in GitHub Issues
 - **Features**: Add new functionality or enhance existing features
 - **Documentation**: Improve or add documentation
+- **Configuration Enhancements**: Improve configuration system capabilities
+- **Device Profiles**: Add support for specific MODBUS device configurations
 - **Tests**: Add missing tests or improve test coverage
 - **Performance**: Optimize code for better performance
 - **Refactoring**: Improve code quality without changing functionality
@@ -145,6 +147,58 @@ By participating in this project, you agree to abide by our Code of Conduct:
    - Comments should start with the name being declared
    - Include examples for complex functions
 
+### Configuration Contributions
+
+When contributing configuration-related features:
+
+1. **Core Library Configuration**: Add features to the basic JSON configuration system
+   ```go
+   // Add new fields to JSONClientConfig
+   type JSONClientConfig struct {
+       SlaveID         int    `json:"slave_id"`
+       TimeoutMs       int    `json:"timeout_ms"`
+       NewFeature      string `json:"new_feature"` // New field
+   }
+   ```
+
+2. **Extended Configuration**: Contribute to the comprehensive config system
+   ```go
+   // Add new configuration sections
+   type Config struct {
+       Connection     ConnectionConfig
+       NewSection     NewSectionConfig // Add new section
+   }
+   ```
+
+3. **Device Profiles**: Add support for specific MODBUS devices
+   ```json
+   {
+     "device_profiles": {
+       "new_device_brand": {
+         "slave_id": 1,
+         "holding_registers_start": 1,
+         "supported_functions": [1, 2, 3, 4],
+         "notes": "Device-specific configuration notes"
+       }
+     }
+   }
+   ```
+
+4. **Configuration Validation**: Add validation for new configuration parameters
+   ```go
+   func (c *Config) Validate() error {
+       if c.NewField < 0 {
+           return fmt.Errorf("new_field must be positive")
+       }
+       return nil
+   }
+   ```
+
+5. **Configuration Examples**: Always include example configurations
+   - Add example files to `config-examples/`
+   - Update documentation with usage examples
+   - Include tests for new configuration options
+
 ### Linting
 
 Run linters before committing:
@@ -189,6 +243,69 @@ Fix common issues:
    ```go
    func BenchmarkReadRegisters(b *testing.B) {
        // Benchmark implementation
+   }
+   ```
+
+### Configuration in Tests
+
+When writing tests that use MODBUS clients, follow these configuration patterns:
+
+1. **Use Default Configuration for Simple Tests**:
+   ```go
+   func TestBasicClientOperation(t *testing.T) {
+       client := modbus.NewTCPClient("localhost:502")
+       client.SetSlaveID(1)
+       // Test logic...
+   }
+   ```
+
+2. **Use Configuration Structs for Complex Tests**:
+   ```go
+   func TestClientWithCustomConfig(t *testing.T) {
+       config := modbus.DefaultClientConfig()
+       config.SlaveID = 2
+       config.Timeout = 5 * time.Second
+       config.RetryCount = 1
+       
+       client := modbus.NewTCPClientFromConfig(config, "localhost:502")
+       // Test logic...
+   }
+   ```
+
+3. **Use JSON Configuration for Integration Tests**:
+   ```go
+   func TestClientFromJSON(t *testing.T) {
+       jsonConfig := `{
+           "slave_id": 1,
+           "timeout_ms": 3000,
+           "retry_count": 2,
+           "transport_type": "tcp"
+       }`
+       
+       client, err := modbus.NewTCPClientFromJSONString(jsonConfig, "localhost:502")
+       require.NoError(t, err)
+       // Test logic...
+   }
+   ```
+
+4. **Test Configuration Persistence**:
+   ```go
+   func TestConfigurationPersistence(t *testing.T) {
+       // Create configuration
+       config := modbus.DefaultClientConfig()
+       config.SlaveID = 5
+       
+       // Save to temporary file
+       tempFile := filepath.Join(t.TempDir(), "test-config.json")
+       err := config.SaveClientConfigToJSON(tempFile)
+       require.NoError(t, err)
+       
+       // Load from file
+       loadedConfig, err := modbus.LoadClientConfigFromJSON(tempFile)
+       require.NoError(t, err)
+       
+       // Verify values
+       assert.Equal(t, config.SlaveID, loadedConfig.SlaveID)
    }
    ```
 

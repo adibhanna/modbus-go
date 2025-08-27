@@ -4,16 +4,17 @@
 1. [Introduction](#introduction)
 2. [Architecture Overview](#architecture-overview)
 3. [Quick Start](#quick-start)
-4. [Core Concepts](#core-concepts)
-5. [Function Codes Reference](#function-codes-reference)
-6. [Client Usage](#client-usage)
-7. [Server Usage](#server-usage)
-8. [Advanced Features](#advanced-features)
-9. [Transport Layers](#transport-layers)
-10. [Error Handling](#error-handling)
-11. [Testing](#testing)
-12. [Performance Considerations](#performance-considerations)
-13. [Troubleshooting](#troubleshooting)
+4. [Configuration](#configuration)
+5. [Core Concepts](#core-concepts)
+6. [Function Codes Reference](#function-codes-reference)
+7. [Client Usage](#client-usage)
+8. [Server Usage](#server-usage)
+9. [Advanced Features](#advanced-features)
+10. [Transport Layers](#transport-layers)
+11. [Error Handling](#error-handling)
+12. [Testing](#testing)
+13. [Performance Considerations](#performance-considerations)
+14. [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
@@ -123,6 +124,349 @@ func main() {
         log.Fatal(err)
     }
 }
+```
+
+## Configuration
+
+ModbusGo provides flexible configuration options for clients, supporting both programmatic configuration and JSON-based configuration files. This allows you to adapt the library to different devices, environments, and operational requirements.
+
+### Configuration Overview
+
+The library supports multiple levels of configuration:
+
+1. **Core Library Configuration** - Simple, lightweight JSON configuration built into the core library
+2. **Extended Configuration System** - Comprehensive configuration with device profiles, testing parameters, and advanced options
+3. **Runtime Configuration** - Dynamic configuration changes during execution
+4. **Configuration Persistence** - Save and load configuration settings
+
+### Core Library Configuration
+
+#### JSON Configuration Structure
+
+The core library supports a simple JSON configuration format:
+
+```json
+{
+  "slave_id": 1,
+  "timeout_ms": 10000,
+  "retry_count": 3,
+  "retry_delay_ms": 100,
+  "connect_timeout_ms": 5000,
+  "transport_type": "tcp"
+}
+```
+
+#### Configuration Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `slave_id` | int | 1 | MODBUS slave/unit identifier |
+| `timeout_ms` | int | 1000 | Response timeout in milliseconds |
+| `retry_count` | int | 3 | Number of retry attempts on failure |
+| `retry_delay_ms` | int | 100 | Delay between retry attempts in milliseconds |
+| `connect_timeout_ms` | int | 5000 | Connection timeout in milliseconds |
+| `transport_type` | string | "tcp" | Transport protocol ("tcp", "rtu", "ascii") |
+
+#### Client Creation Methods
+
+##### 1. From JSON File
+
+```go
+// Load configuration from file
+client, err := modbus.NewTCPClientFromJSONFile("config.json", "192.168.1.102:502")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+##### 2. From JSON String
+
+```go
+// Load configuration from JSON string
+jsonConfig := `{
+    "slave_id": 2,
+    "timeout_ms": 15000,
+    "retry_count": 5,
+    "retry_delay_ms": 250,
+    "connect_timeout_ms": 8000,
+    "transport_type": "tcp"
+}`
+
+client, err := modbus.NewTCPClientFromJSONString(jsonConfig, "192.168.1.102:502")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+##### 3. From ClientConfig Struct
+
+```go
+// Create configuration struct
+config := modbus.DefaultClientConfig()
+config.SlaveID = 3
+config.Timeout = 20 * time.Second
+config.RetryCount = 1
+config.RetryDelay = 500 * time.Millisecond
+
+// Create client from config
+client := modbus.NewTCPClientFromConfig(config, "192.168.1.102:502")
+```
+
+#### Runtime Configuration Management
+
+##### Reading Current Configuration
+
+```go
+client := modbus.NewTCPClient("192.168.1.102:502")
+
+// Get current configuration
+config := client.GetConfig()
+fmt.Printf("Current SlaveID: %d\n", config.SlaveID)
+fmt.Printf("Current Timeout: %v\n", config.Timeout)
+```
+
+##### Modifying Configuration
+
+```go
+// Individual parameter changes
+client.SetSlaveID(5)
+client.SetTimeout(15 * time.Second)
+client.SetRetryCount(2)
+client.SetRetryDelay(200 * time.Millisecond)
+client.SetConnectTimeout(10 * time.Second)
+
+// Bulk configuration change
+newConfig := modbus.DefaultClientConfig()
+newConfig.SlaveID = 10
+newConfig.RetryCount = 5
+client.ApplyConfig(newConfig)
+```
+
+##### Configuration Persistence
+
+```go
+// Save configuration to JSON file
+config := client.GetConfig()
+err := config.SaveClientConfigToJSON("saved-config.json")
+if err != nil {
+    log.Printf("Failed to save config: %v", err)
+}
+
+// Convert configuration to JSON string
+jsonString, err := config.ToJSONString()
+if err != nil {
+    log.Printf("Failed to convert config: %v", err)
+} else {
+    fmt.Printf("Configuration:\n%s\n", jsonString)
+}
+```
+
+### Extended Configuration System
+
+For comprehensive testing, device profiles, and advanced configuration management, use the extended configuration system:
+
+```go
+import "github.com/adibhanna/modbus-go/config"
+
+// Load extended configuration
+cfg, err := config.LoadConfig("extended-config.json")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Create client using extended configuration
+client := modbus.NewTCPClient(cfg.Connection.GetFullAddress())
+client.SetSlaveID(cfg.Modbus.GetSlaveID())
+client.SetTimeout(cfg.Connection.GetTimeout())
+client.SetRetryCount(cfg.Connection.RetryCount)
+```
+
+#### Extended Configuration Structure
+
+```json
+{
+  "connection": {
+    "address": "192.168.1.102",
+    "port": 502,
+    "timeout_ms": 10000,
+    "connect_timeout_ms": 5000,
+    "retry_count": 3,
+    "transport_type": "tcp"
+  },
+  "modbus": {
+    "slave_id": 1,
+    "unit_id": 1,
+    "protocol_id": 0
+  },
+  "testing": {
+    "enabled_tests": [
+      "read_holding_registers",
+      "read_coils",
+      "write_single_register"
+    ],
+    "test_addresses": {
+      "holding_registers": {
+        "start_address": 0,
+        "quantity": 5
+      }
+    }
+  },
+  "device_profiles": {
+    "schneider_electric": {
+      "slave_id": 1,
+      "holding_registers_start": 1,
+      "supported_functions": [1, 2, 3, 4, 5, 6, 15, 16]
+    }
+  },
+  "current_profile": "schneider_electric"
+}
+```
+
+### Device-Specific Configuration Examples
+
+#### Schneider Electric Configuration
+
+```json
+{
+  "slave_id": 1,
+  "timeout_ms": 10000,
+  "retry_count": 3,
+  "retry_delay_ms": 100,
+  "connect_timeout_ms": 5000,
+  "transport_type": "tcp"
+}
+```
+
+#### Siemens Configuration
+
+```json
+{
+  "slave_id": 1,
+  "timeout_ms": 8000,
+  "retry_count": 2,
+  "retry_delay_ms": 150,
+  "connect_timeout_ms": 4000,
+  "transport_type": "tcp"
+}
+```
+
+#### Diagnostic Configuration
+
+```json
+{
+  "slave_id": 1,
+  "timeout_ms": 5000,
+  "retry_count": 1,
+  "retry_delay_ms": 200,
+  "connect_timeout_ms": 3000,
+  "transport_type": "tcp"
+}
+```
+
+### Configuration Best Practices
+
+#### 1. Environment-Specific Configurations
+
+```go
+// Development environment
+devConfig := `{
+    "slave_id": 1,
+    "timeout_ms": 30000,
+    "retry_count": 5,
+    "retry_delay_ms": 1000
+}`
+
+// Production environment
+prodConfig := `{
+    "slave_id": 1,
+    "timeout_ms": 5000,
+    "retry_count": 2,
+    "retry_delay_ms": 100
+}`
+
+var configStr string
+if os.Getenv("ENV") == "production" {
+    configStr = prodConfig
+} else {
+    configStr = devConfig
+}
+
+client, err := modbus.NewTCPClientFromJSONString(configStr, address)
+```
+
+#### 2. Configuration Validation
+
+```go
+client, err := modbus.NewTCPClientFromJSONFile("config.json", address)
+if err != nil {
+    // Fallback to default configuration
+    log.Printf("Failed to load config, using defaults: %v", err)
+    client = modbus.NewTCPClient(address)
+}
+
+// Validate configuration
+config := client.GetConfig()
+if config.Timeout < 1*time.Second {
+    log.Printf("Warning: Timeout very low (%v), consider increasing", config.Timeout)
+}
+if config.RetryCount > 10 {
+    log.Printf("Warning: High retry count (%d) may cause delays", config.RetryCount)
+}
+```
+
+#### 3. Configuration Templates
+
+```go
+// Base configuration template
+func NewIndustrialConfig() *modbus.ClientConfig {
+    config := modbus.DefaultClientConfig()
+    config.Timeout = 10 * time.Second
+    config.RetryCount = 3
+    config.RetryDelay = 500 * time.Millisecond
+    config.ConnectTimeout = 15 * time.Second
+    return config
+}
+
+// Device-specific adjustments
+func NewSchneiderzConfig() *modbus.ClientConfig {
+    config := NewIndustrialConfig()
+    config.SlaveID = 1
+    config.RetryDelay = 100 * time.Millisecond
+    return config
+}
+```
+
+### Configuration Migration
+
+If you're upgrading from a previous version that didn't support configuration:
+
+#### Before (Manual Configuration)
+
+```go
+client := modbus.NewTCPClient("192.168.1.102:502")
+client.SetSlaveID(1)
+client.SetTimeout(10 * time.Second)
+client.SetRetryCount(3)
+```
+
+#### After (JSON Configuration)
+
+```go
+// Save existing configuration as JSON template
+config := &modbus.ClientConfig{
+    SlaveID:        1,
+    Timeout:        10 * time.Second,
+    RetryCount:     3,
+    RetryDelay:     100 * time.Millisecond,
+    ConnectTimeout: 5 * time.Second,
+    TransportType:  modbus.TransportTCP,
+}
+
+// Save as template for future use
+err := config.SaveClientConfigToJSON("my-device-config.json")
+
+// Load from file in future
+client, err := modbus.NewTCPClientFromJSONFile("my-device-config.json", "192.168.1.102:502")
 ```
 
 ## Core Concepts

@@ -11,26 +11,65 @@ import (
 
 // Client represents a MODBUS client
 type Client struct {
-	transport  transport.Transport
-	slaveID    modbus.SlaveID
-	timeout    time.Duration
-	retryCount int
+	transport      transport.Transport
+	slaveID        modbus.SlaveID
+	timeout        time.Duration
+	retryCount     int
+	retryDelay     time.Duration
+	connectTimeout time.Duration
 }
 
 // NewClient creates a new MODBUS client with the given transport
 func NewClient(t transport.Transport) *Client {
 	config := modbus.DefaultClientConfig()
 	return &Client{
-		transport:  t,
-		slaveID:    config.SlaveID,
-		timeout:    config.Timeout,
-		retryCount: config.RetryCount,
+		transport:      t,
+		slaveID:        config.SlaveID,
+		timeout:        config.Timeout,
+		retryCount:     config.RetryCount,
+		retryDelay:     config.RetryDelay,
+		connectTimeout: config.ConnectTimeout,
 	}
 }
 
 // NewTCPClient creates a new MODBUS TCP client
 func NewTCPClient(address string) *Client {
 	return NewClient(transport.NewTCPTransport(address))
+}
+
+// NewClientFromConfig creates a new MODBUS client from a configuration
+func NewClientFromConfig(config *modbus.ClientConfig, t transport.Transport) *Client {
+	return &Client{
+		transport:      t,
+		slaveID:        config.SlaveID,
+		timeout:        config.Timeout,
+		retryCount:     config.RetryCount,
+		retryDelay:     config.RetryDelay,
+		connectTimeout: config.ConnectTimeout,
+	}
+}
+
+// NewTCPClientFromConfig creates a new MODBUS TCP client from configuration
+func NewTCPClientFromConfig(config *modbus.ClientConfig, address string) *Client {
+	return NewClientFromConfig(config, transport.NewTCPTransport(address))
+}
+
+// NewTCPClientFromJSONFile creates a new MODBUS TCP client from a JSON configuration file
+func NewTCPClientFromJSONFile(configPath, address string) (*Client, error) {
+	config, err := modbus.LoadClientConfigFromJSON(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+	return NewTCPClientFromConfig(config, address), nil
+}
+
+// NewTCPClientFromJSONString creates a new MODBUS TCP client from a JSON configuration string
+func NewTCPClientFromJSONString(jsonConfig, address string) (*Client, error) {
+	config, err := modbus.LoadClientConfigFromJSONString(jsonConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+	return NewTCPClientFromConfig(config, address), nil
 }
 
 // Connect establishes the connection
@@ -80,6 +119,49 @@ func (c *Client) GetRetryCount() int {
 	return c.retryCount
 }
 
+// SetRetryDelay sets the delay between retry attempts
+func (c *Client) SetRetryDelay(delay time.Duration) {
+	c.retryDelay = delay
+}
+
+// GetRetryDelay returns the current retry delay
+func (c *Client) GetRetryDelay() time.Duration {
+	return c.retryDelay
+}
+
+// SetConnectTimeout sets the connection timeout
+func (c *Client) SetConnectTimeout(timeout time.Duration) {
+	c.connectTimeout = timeout
+}
+
+// GetConnectTimeout returns the current connection timeout
+func (c *Client) GetConnectTimeout() time.Duration {
+	return c.connectTimeout
+}
+
+// GetConfig returns the current client configuration
+func (c *Client) GetConfig() *modbus.ClientConfig {
+	return &modbus.ClientConfig{
+		SlaveID:        c.slaveID,
+		Timeout:        c.timeout,
+		RetryCount:     c.retryCount,
+		RetryDelay:     c.retryDelay,
+		ConnectTimeout: c.connectTimeout,
+		TransportType:  c.transport.GetTransportType(),
+	}
+}
+
+// ApplyConfig applies a configuration to the client
+func (c *Client) ApplyConfig(config *modbus.ClientConfig) {
+	c.slaveID = config.SlaveID
+	c.timeout = config.Timeout
+	c.retryCount = config.RetryCount
+	c.retryDelay = config.RetryDelay
+	c.connectTimeout = config.ConnectTimeout
+	// Update transport timeout as well
+	c.transport.SetTimeout(c.timeout)
+}
+
 // sendRequest sends a request with retry logic
 func (c *Client) sendRequest(req *pdu.Request) (*pdu.Response, error) {
 	var lastErr error
@@ -93,7 +175,7 @@ func (c *Client) sendRequest(req *pdu.Request) (*pdu.Response, error) {
 
 		// Don't retry on the last attempt
 		if attempt < c.retryCount {
-			time.Sleep(time.Millisecond * 100) // Small delay between retries
+			time.Sleep(c.retryDelay) // Configurable delay between retries
 		}
 	}
 

@@ -1,7 +1,9 @@
 package modbus
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -167,19 +169,23 @@ func (tt TransportType) String() string {
 
 // ClientConfig holds configuration for a MODBUS client
 type ClientConfig struct {
-	SlaveID       SlaveID
-	Timeout       time.Duration
-	RetryCount    int
-	TransportType TransportType
+	SlaveID        SlaveID
+	Timeout        time.Duration
+	RetryCount     int
+	RetryDelay     time.Duration
+	ConnectTimeout time.Duration
+	TransportType  TransportType
 }
 
 // DefaultClientConfig returns a default client configuration
 func DefaultClientConfig() *ClientConfig {
 	return &ClientConfig{
-		SlaveID:       1,
-		Timeout:       time.Duration(DefaultResponseTimeout) * time.Millisecond,
-		RetryCount:    3,
-		TransportType: TransportTCP,
+		SlaveID:        1,
+		Timeout:        time.Duration(DefaultResponseTimeout) * time.Millisecond,
+		RetryCount:     3,
+		RetryDelay:     100 * time.Millisecond,
+		ConnectTimeout: time.Duration(DefaultConnectTimeout) * time.Millisecond,
+		TransportType:  TransportTCP,
 	}
 }
 
@@ -195,6 +201,114 @@ func DefaultServerConfig() *ServerConfig {
 		SlaveID:       1,
 		TransportType: TransportTCP,
 	}
+}
+
+// JSONClientConfig represents client configuration in JSON format
+type JSONClientConfig struct {
+	SlaveID         int    `json:"slave_id"`
+	TimeoutMs       int    `json:"timeout_ms"`
+	RetryCount      int    `json:"retry_count"`
+	RetryDelayMs    int    `json:"retry_delay_ms"`
+	ConnectTimeoutMs int   `json:"connect_timeout_ms"`
+	TransportType   string `json:"transport_type"`
+}
+
+// ToClientConfig converts JSONClientConfig to ClientConfig
+func (jcc *JSONClientConfig) ToClientConfig() *ClientConfig {
+	var transportType TransportType
+	switch jcc.TransportType {
+	case "tcp":
+		transportType = TransportTCP
+	case "rtu":
+		transportType = TransportRTU
+	case "ascii":
+		transportType = TransportASCII
+	default:
+		transportType = TransportTCP
+	}
+
+	return &ClientConfig{
+		SlaveID:        SlaveID(jcc.SlaveID),
+		Timeout:        time.Duration(jcc.TimeoutMs) * time.Millisecond,
+		RetryCount:     jcc.RetryCount,
+		RetryDelay:     time.Duration(jcc.RetryDelayMs) * time.Millisecond,
+		ConnectTimeout: time.Duration(jcc.ConnectTimeoutMs) * time.Millisecond,
+		TransportType:  transportType,
+	}
+}
+
+// LoadClientConfigFromJSON loads client configuration from a JSON file
+func LoadClientConfigFromJSON(filepath string) (*ClientConfig, error) {
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	var jsonConfig JSONClientConfig
+	if err := json.Unmarshal(data, &jsonConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON config: %w", err)
+	}
+
+	return jsonConfig.ToClientConfig(), nil
+}
+
+// LoadClientConfigFromJSONString loads client configuration from a JSON string
+func LoadClientConfigFromJSONString(jsonStr string) (*ClientConfig, error) {
+	var jsonConfig JSONClientConfig
+	if err := json.Unmarshal([]byte(jsonStr), &jsonConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON config: %w", err)
+	}
+
+	return jsonConfig.ToClientConfig(), nil
+}
+
+// ToJSONClientConfig converts ClientConfig to JSONClientConfig
+func (cc *ClientConfig) ToJSONClientConfig() *JSONClientConfig {
+	var transportType string
+	switch cc.TransportType {
+	case TransportTCP:
+		transportType = "tcp"
+	case TransportRTU:
+		transportType = "rtu"
+	case TransportASCII:
+		transportType = "ascii"
+	default:
+		transportType = "tcp"
+	}
+
+	return &JSONClientConfig{
+		SlaveID:         int(cc.SlaveID),
+		TimeoutMs:       int(cc.Timeout / time.Millisecond),
+		RetryCount:      cc.RetryCount,
+		RetryDelayMs:    int(cc.RetryDelay / time.Millisecond),
+		ConnectTimeoutMs: int(cc.ConnectTimeout / time.Millisecond),
+		TransportType:   transportType,
+	}
+}
+
+// SaveClientConfigToJSON saves client configuration to a JSON file
+func (cc *ClientConfig) SaveClientConfigToJSON(filepath string) error {
+	jsonConfig := cc.ToJSONClientConfig()
+	data, err := json.MarshalIndent(jsonConfig, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config to JSON: %w", err)
+	}
+
+	if err := os.WriteFile(filepath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
+}
+
+// ToJSONString converts ClientConfig to a JSON string
+func (cc *ClientConfig) ToJSONString() (string, error) {
+	jsonConfig := cc.ToJSONClientConfig()
+	data, err := json.MarshalIndent(jsonConfig, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal config to JSON: %w", err)
+	}
+	return string(data), nil
 }
 
 // DataStore interface defines the methods for accessing MODBUS data

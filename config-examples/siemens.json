@@ -1,0 +1,80 @@
+{
+  "connection": {
+    "address": "192.168.1.102",
+    "port": 502,
+    "timeout_ms": 10000,
+    "connect_timeout_ms": 5000,
+    "retry_count": 3,
+    "transport_type": "tcp"
+  },
+  "modbus": {
+    "slave_id": 1,
+    "unit_id": 1,
+    "protocol_id": 0
+  },
+  "testing": {
+    "enabled_tests": [
+      "read_holding_registers",
+      "read_input_registers",
+      "read_coils",
+      "read_discrete_inputs"
+    ],
+    "test_addresses": {
+      "holding_registers": {
+        "start_address": 0,
+        "quantity": 10
+      },
+      "coils": {
+        "start_address": 0,
+        "quantity": 16
+      },
+      "input_registers": {
+        "start_address": 0,
+        "quantity": 10
+      },
+      "discrete_inputs": {
+        "start_address": 0,
+        "quantity": 16
+      }
+    },
+    "test_values": {
+      "single_register_value": 1000,
+      "multiple_register_values": [1000, 2000, 3000, 4000, 5000],
+      "coil_pattern": [true, false, true, false, true, false, true, false]
+    }
+  },
+  "advanced": {
+    "mask_write": {
+      "address": 10,
+      "and_mask": 65535,
+      "or_mask": 21
+    },
+    "read_write_multiple": {
+      "read_address": 0,
+      "read_quantity": 5,
+      "write_address": 100,
+      "write_values": [999, 888, 777]
+    },
+    "fifo_queue": {
+      "address": 0
+    }
+  },
+  "logging": {
+    "level": "info",
+    "verbose": false,
+    "show_timing": true,
+    "show_raw_data": false
+  },
+  "device_profiles": {
+    "siemens": {
+      "slave_id": 1,
+      "holding_registers_start": 0,
+      "input_registers_start": 0,
+      "coils_start": 0,
+      "discrete_inputs_start": 0,
+      "supported_functions": [1, 2, 3, 4, 5, 6, 15, 16],
+      "notes": "Siemens devices typically use 0-based addressing"
+    }
+  },
+  "current_profile": "siemens"
+}

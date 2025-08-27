@@ -6,13 +6,16 @@ A comprehensive, production-ready MODBUS implementation in Go supporting the com
 
 - **[Complete Documentation](DOCUMENTATION.md)** - Comprehensive guide covering all features with examples
 - **[API Reference](API_REFERENCE.md)** - Detailed API documentation for all packages
+- **[Configuration Guide](DOCUMENTATION.md#configuration)** - Complete configuration system documentation
 - **[Examples](examples/)** - Ready-to-run example implementations
+- **[Configuration Examples](config-examples/)** - Device-specific configuration templates
 
 ## ✨ Features
 
 - **Complete Protocol Implementation** - All 19 standard MODBUS function codes
 - **Multiple Transport Protocols** - TCP/IP, RTU (serial), and ASCII
 - **Client and Server Support** - Full-featured client and server implementations  
+- **Flexible Configuration** - JSON-based configuration with device profiles and runtime management
 - **Advanced Features** - File records, FIFO queues, diagnostics, device identification
 - **Thread-Safe** - Concurrent-safe operations with proper synchronization
 - **Production Ready** - Comprehensive error handling and recovery mechanisms
@@ -91,6 +94,79 @@ func main() {
         log.Fatal(err)
     }
 }
+```
+
+## ⚙️ Configuration
+
+The library supports both programmatic and JSON-based configuration for flexible client setup:
+
+### JSON Configuration
+
+```json
+{
+  "slave_id": 1,
+  "timeout_ms": 10000,
+  "retry_count": 3,
+  "retry_delay_ms": 100,
+  "connect_timeout_ms": 5000,
+  "transport_type": "tcp"
+}
+```
+
+### Configuration Examples
+
+```go
+// Load client from JSON file (create your own config file)
+client, err := modbus.NewTCPClientFromJSONFile("my-config.json", "192.168.1.102:502")
+
+// Load client from JSON string  
+jsonConfig := `{"slave_id": 1, "timeout_ms": 5000, "retry_count": 2}`
+client, err := modbus.NewTCPClientFromJSONString(jsonConfig, "192.168.1.102:502")
+
+// Use configuration struct
+config := modbus.DefaultClientConfig()
+config.SlaveID = 2
+config.RetryCount = 5
+client := modbus.NewTCPClientFromConfig(config, "192.168.1.102:502")
+
+// Runtime configuration changes
+client.SetSlaveID(3)
+client.SetRetryDelay(200 * time.Millisecond)
+client.SetRetryCount(1)
+
+// Save current configuration
+config := client.GetConfig()
+config.SaveClientConfigToJSON("saved-config.json")
+```
+
+### Advanced Configuration
+
+For comprehensive configuration with testing parameters, device profiles, and logging options, use the extended configuration system:
+
+```go
+import "github.com/adibhanna/modbus-go/config"
+
+// Load extended configuration
+cfg, err := config.LoadConfig("config.json")
+client := modbus.NewTCPClient(cfg.Connection.GetFullAddress())
+client.SetSlaveID(cfg.Modbus.GetSlaveID())
+client.SetTimeout(cfg.Connection.GetTimeout())
+```
+
+### Device-Specific Configurations
+
+Pre-configured templates for common MODBUS devices are available in [`config-examples/`](config-examples/):
+
+- **Schneider Electric**: `config-examples/schneider-electric.json`
+- **Siemens**: `config-examples/siemens.json`  
+- **Diagnostic/Troubleshooting**: `config-examples/diagnostic.json`
+
+```bash
+# Use device-specific configuration
+go run examples/tcp_client/main.go -config=config-examples/schneider-electric.json
+
+# Run diagnostics with specific configuration
+go run examples/tcp_client_diagnostic.go -config=config-examples/diagnostic.json
 ```
 
 ## 📋 Supported Function Codes

@@ -6,7 +6,69 @@
 github.com/adibhanna/modbus-go
 ├── modbus/       # Core types and constants
 ├── pdu/          # Protocol Data Unit handling
-└── transport/    # Transport implementations
+├── transport/    # Transport implementations
+└── config/       # Configuration management
+```
+
+## Configuration API
+
+### ClientConfig
+
+```go
+type ClientConfig struct {
+    SlaveID        SlaveID
+    Timeout        time.Duration
+    RetryCount     int
+    RetryDelay     time.Duration
+    ConnectTimeout time.Duration
+    TransportType  TransportType
+}
+
+// Create default configuration
+config := modbus.DefaultClientConfig()
+
+// Load from JSON file
+config, err := modbus.LoadClientConfigFromJSON("config.json")
+
+// Load from JSON string
+config, err := modbus.LoadClientConfigFromJSONString(jsonString)
+
+// Save to JSON file
+err := config.SaveClientConfigToJSON("config.json")
+
+// Convert to JSON string
+jsonString, err := config.ToJSONString()
+```
+
+### JSONClientConfig
+
+```go
+type JSONClientConfig struct {
+    SlaveID         int    `json:"slave_id"`
+    TimeoutMs       int    `json:"timeout_ms"`
+    RetryCount      int    `json:"retry_count"`
+    RetryDelayMs    int    `json:"retry_delay_ms"`
+    ConnectTimeoutMs int   `json:"connect_timeout_ms"`
+    TransportType   string `json:"transport_type"`
+}
+
+// Convert between formats
+clientConfig := jsonConfig.ToClientConfig()
+jsonConfig := clientConfig.ToJSONClientConfig()
+```
+
+### Extended Configuration
+
+```go
+import "github.com/adibhanna/modbus-go/config"
+
+// Load comprehensive configuration
+cfg, err := config.LoadConfig("config.json")
+
+// Access configuration sections
+address := cfg.Connection.GetFullAddress()  // "192.168.1.102:502"
+timeout := cfg.Connection.GetTimeout()      // time.Duration
+slaveID := cfg.Modbus.GetSlaveID()         // modbus.SlaveID
 ```
 
 ## Client API
@@ -19,8 +81,20 @@ type Client interface {
     Connect() error
     Close() error
     IsConnected() bool
-    SetTimeout(timeout time.Duration)
+    
+    // Configuration management
     SetSlaveID(id SlaveID)
+    GetSlaveID() SlaveID
+    SetTimeout(timeout time.Duration)
+    GetTimeout() time.Duration
+    SetRetryCount(count int)
+    GetRetryCount() int
+    SetRetryDelay(delay time.Duration)
+    GetRetryDelay() time.Duration
+    SetConnectTimeout(timeout time.Duration)
+    GetConnectTimeout() time.Duration
+    GetConfig() *ClientConfig
+    ApplyConfig(config *ClientConfig)
     
     // Bit access functions
     ReadCoils(address Address, quantity Quantity) ([]bool, error)
@@ -62,14 +136,50 @@ type Client interface {
 ### TCP Client
 
 ```go
-// Constructor
-func NewTCPClient(address string, slaveID SlaveID) (*TCPClient, error)
+// Basic constructor
+func NewTCPClient(address string) *Client
 
-// Example
-client, err := modbus.NewTCPClient("192.168.1.100:502", 1)
+// Constructor with configuration
+func NewTCPClientFromConfig(config *ClientConfig, address string) *Client
+func NewClientFromConfig(config *ClientConfig, transport Transport) *Client
+
+// Constructor from JSON
+func NewTCPClientFromJSONFile(configPath, address string) (*Client, error)
+func NewTCPClientFromJSONString(jsonConfig, address string) (*Client, error)
+
+// Examples
+
+// 1. Basic client
+client := modbus.NewTCPClient("192.168.1.102:502")
+client.SetSlaveID(1)
+client.SetTimeout(10 * time.Second)
+
+// 2. Client from configuration struct
+config := modbus.DefaultClientConfig()
+config.SlaveID = 2
+config.RetryCount = 5
+client := modbus.NewTCPClientFromConfig(config, "192.168.1.102:502")
+
+// 3. Client from JSON file
+client, err := modbus.NewTCPClientFromJSONFile("config.json", "192.168.1.102:502")
 if err != nil {
     return err
 }
+
+// 4. Client from JSON string
+jsonConfig := `{
+    "slave_id": 1,
+    "timeout_ms": 10000,
+    "retry_count": 3,
+    "retry_delay_ms": 100,
+    "connect_timeout_ms": 5000,
+    "transport_type": "tcp"
+}`
+client, err := modbus.NewTCPClientFromJSONString(jsonConfig, "192.168.1.102:502")
+if err != nil {
+    return err
+}
+
 defer client.Close()
 
 // Read operations
@@ -79,6 +189,11 @@ coils, err := client.ReadCoils(0, 16)
 // Write operations
 err = client.WriteSingleRegister(100, 1234)
 err = client.WriteMultipleRegisters(200, []uint16{1, 2, 3, 4})
+
+// Configuration management
+currentConfig := client.GetConfig()
+client.SetRetryDelay(500 * time.Millisecond)
+err = currentConfig.SaveClientConfigToJSON("saved-config.json")
 ```
 
 ### RTU Client

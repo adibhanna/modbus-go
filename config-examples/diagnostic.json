@@ -1,0 +1,81 @@
+{
+  "connection": {
+    "address": "192.168.1.102",
+    "port": 502,
+    "timeout_ms": 5000,
+    "connect_timeout_ms": 3000,
+    "retry_count": 1,
+    "transport_type": "tcp"
+  },
+  "modbus": {
+    "slave_id": 1,
+    "unit_id": 1,
+    "protocol_id": 0
+  },
+  "testing": {
+    "enabled_tests": [
+      "read_holding_registers",
+      "read_input_registers",
+      "read_coils",
+      "read_discrete_inputs",
+      "device_identification"
+    ],
+    "test_addresses": {
+      "holding_registers": {
+        "start_address": 0,
+        "quantity": 1
+      },
+      "coils": {
+        "start_address": 0,
+        "quantity": 1
+      },
+      "input_registers": {
+        "start_address": 0,
+        "quantity": 1
+      },
+      "discrete_inputs": {
+        "start_address": 0,
+        "quantity": 1
+      }
+    },
+    "test_values": {
+      "single_register_value": 12345,
+      "multiple_register_values": [100, 200, 300],
+      "coil_pattern": [true, false, true, false]
+    }
+  },
+  "advanced": {
+    "mask_write": {
+      "address": 0,
+      "and_mask": 65535,
+      "or_mask": 1
+    },
+    "read_write_multiple": {
+      "read_address": 0,
+      "read_quantity": 1,
+      "write_address": 10,
+      "write_values": [999]
+    },
+    "fifo_queue": {
+      "address": 0
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "verbose": true,
+    "show_timing": true,
+    "show_raw_data": true
+  },
+  "device_profiles": {
+    "diagnostic": {
+      "slave_id": 1,
+      "holding_registers_start": 0,
+      "input_registers_start": 0,
+      "coils_start": 0,
+      "discrete_inputs_start": 0,
+      "supported_functions": [1, 2, 3, 4, 43],
+      "notes": "Minimal configuration for quick device compatibility testing"
+    }
+  },
+  "current_profile": "diagnostic"
+}

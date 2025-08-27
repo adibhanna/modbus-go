@@ -11,6 +11,9 @@ run:
   issues-exit-code: 1
   # Include tests in analysis.
   tests: false
+  # Skip directories for linting.
+  skip-dirs:
+    - examples
 
 output:
   # Output format.
@@ -34,7 +37,7 @@ linters-settings:
     sections:
       - standard # Standard library imports
       - default # 3rd-party imports
-      - prefix(github.com/BonjoyCorp/pulse) # Your local packages
+      - prefix(github.com/adibhanna/modbus-go) # Your local packages
     # Add a blank line between sections.
     section-separators:
       - newLine
@@ -50,7 +53,7 @@ linters-settings:
     errorf: true
   goimports:
     # Put local imports after 3rd-party imports.
-    local-prefixes: "github.com/BonjoyCorp/pulsePLC"
+    local-prefixes: "github.com/adibhanna/modbus-go"
 
 linters:
   # Disable all linters first, then enable specific ones.
@@ -104,10 +107,3 @@ issues:
         - errcheck
       # CORRECTED: Use single quotes to avoid YAML escape character errors.
       text: 'Error return value of .((os\.)?std(out|err)\..*|.*Print(f|ln)?|os\.(Un)?Setenv). is not checked'
-    
-    # Allow unused functions in library code - these may be used by external consumers
-    - linters:
-        - unused
-      path: "plc/validate\\.go"
-
-
