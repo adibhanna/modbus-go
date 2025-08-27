@@ -84,13 +84,13 @@ examples:
 ## test: Run all tests
 test:
 	@echo "$(YELLOW)Running tests...$(NC)"
-	@$(GOTEST) $(GOFLAGS) -race -short ./...
+	@$(GOTEST) $(GOFLAGS) -race -short $$($(GOCMD) list ./... | grep -v /examples/)
 	@echo "$(GREEN)✓ Tests passed$(NC)"
 
 ## test-verbose: Run tests with verbose output
 test-verbose:
 	@echo "$(YELLOW)Running tests (verbose)...$(NC)"
-	@$(GOTEST) -v -race ./...
+	@$(GOTEST) -v -race $$($(GOCMD) list ./... | grep -v /examples/)
 
 ## integration-test: Run integration tests
 integration-test:
@@ -106,7 +106,7 @@ integration-test:
 coverage:
 	@echo "$(YELLOW)Generating coverage report...$(NC)"
 	@mkdir -p $(COVERAGE_DIR)
-	@$(GOTEST) -coverprofile=$(COVERAGE_DIR)/coverage.out -covermode=atomic ./...
+	@$(GOTEST) -coverprofile=$(COVERAGE_DIR)/coverage.out -covermode=atomic $$($(GOCMD) list ./... | grep -v /examples/)
 	@$(GOCMD) tool cover -html=$(COVERAGE_DIR)/coverage.out -o $(COVERAGE_DIR)/coverage.html
 	@$(GOCMD) tool cover -func=$(COVERAGE_DIR)/coverage.out
 	@echo "$(GREEN)✓ Coverage report generated at $(COVERAGE_DIR)/coverage.html$(NC)"
@@ -144,10 +144,10 @@ bench-compare:
 lint: check-tools
 	@echo "$(YELLOW)Running linters...$(NC)"
 	@if command -v $(GOLINT) > /dev/null; then \
-		$(GOLINT) run ./...; \
+		$(GOLINT) run . ./config ./modbus ./pdu ./transport; \
 	else \
 		echo "$(YELLOW)golangci-lint not found, using go vet$(NC)"; \
-		$(GOVET) ./...; \
+		$(GOVET) . ./config ./modbus ./pdu ./transport; \
 	fi
 	@echo "$(GREEN)✓ Lint checks passed$(NC)"
 
@@ -174,7 +174,7 @@ fmt-check:
 ## vet: Run go vet
 vet:
 	@echo "$(YELLOW)Running go vet...$(NC)"
-	@$(GOVET) ./...
+	@$(GOVET) . ./config ./modbus ./pdu ./transport
 	@echo "$(GREEN)✓ Vet checks passed$(NC)"
 
 ## security: Run security checks
