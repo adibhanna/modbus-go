@@ -12,12 +12,12 @@ import (
 
 // ConnectionConfig holds connection-related settings
 type ConnectionConfig struct {
-	Address           string `json:"address"`
-	Port              int    `json:"port"`
-	TimeoutMs         int    `json:"timeout_ms"`
-	ConnectTimeoutMs  int    `json:"connect_timeout_ms"`
-	RetryCount        int    `json:"retry_count"`
-	TransportType     string `json:"transport_type"`
+	Address          string `json:"address"`
+	Port             int    `json:"port"`
+	TimeoutMs        int    `json:"timeout_ms"`
+	ConnectTimeoutMs int    `json:"connect_timeout_ms"`
+	RetryCount       int    `json:"retry_count"`
+	TransportType    string `json:"transport_type"`
 }
 
 // GetFullAddress returns the full address string (host:port)
@@ -65,9 +65,9 @@ func (a *AddressRange) GetQuantity() modbus.Quantity {
 
 // TestConfig holds testing-related settings
 type TestConfig struct {
-	EnabledTests   []string                    `json:"enabled_tests"`
-	TestAddresses  map[string]AddressRange     `json:"test_addresses"`
-	TestValues     map[string]json.RawMessage  `json:"test_values"`
+	EnabledTests  []string                   `json:"enabled_tests"`
+	TestAddresses map[string]AddressRange    `json:"test_addresses"`
+	TestValues    map[string]json.RawMessage `json:"test_values"`
 }
 
 // IsTestEnabled checks if a specific test is enabled
@@ -138,24 +138,24 @@ type LoggingConfig struct {
 
 // DeviceProfile holds device-specific configuration
 type DeviceProfile struct {
-	SlaveID                  int      `json:"slave_id"`
-	HoldingRegistersStart    int      `json:"holding_registers_start"`
-	InputRegistersStart      int      `json:"input_registers_start"`
-	CoilsStart               int      `json:"coils_start"`
-	DiscreteInputsStart      int      `json:"discrete_inputs_start"`
-	SupportedFunctions       []int    `json:"supported_functions"`
-	Notes                    string   `json:"notes,omitempty"`
+	SlaveID               int    `json:"slave_id"`
+	HoldingRegistersStart int    `json:"holding_registers_start"`
+	InputRegistersStart   int    `json:"input_registers_start"`
+	CoilsStart            int    `json:"coils_start"`
+	DiscreteInputsStart   int    `json:"discrete_inputs_start"`
+	SupportedFunctions    []int  `json:"supported_functions"`
+	Notes                 string `json:"notes,omitempty"`
 }
 
 // Config holds the complete configuration
 type Config struct {
-	Connection     ConnectionConfig             `json:"connection"`
-	Modbus         ModbusConfig                 `json:"modbus"`
-	Testing        TestConfig                   `json:"testing"`
-	Advanced       AdvancedConfig               `json:"advanced"`
-	Logging        LoggingConfig                `json:"logging"`
-	DeviceProfiles map[string]DeviceProfile     `json:"device_profiles"`
-	CurrentProfile string                       `json:"current_profile"`
+	Connection     ConnectionConfig         `json:"connection"`
+	Modbus         ModbusConfig             `json:"modbus"`
+	Testing        TestConfig               `json:"testing"`
+	Advanced       AdvancedConfig           `json:"advanced"`
+	Logging        LoggingConfig            `json:"logging"`
+	DeviceProfiles map[string]DeviceProfile `json:"device_profiles"`
+	CurrentProfile string                   `json:"current_profile"`
 }
 
 // GetCurrentProfile returns the currently selected device profile
@@ -273,12 +273,12 @@ func (c *Config) SaveConfig(configPath string) error {
 func DefaultConfig() *Config {
 	return &Config{
 		Connection: ConnectionConfig{
-			Address:           "localhost",
-			Port:              502,
-			TimeoutMs:         5000,
-			ConnectTimeoutMs:  5000,
-			RetryCount:        3,
-			TransportType:     "tcp",
+			Address:          "localhost",
+			Port:             502,
+			TimeoutMs:        5000,
+			ConnectTimeoutMs: 5000,
+			RetryCount:       3,
+			TransportType:    "tcp",
 		},
 		Modbus: ModbusConfig{
 			SlaveID:    1,

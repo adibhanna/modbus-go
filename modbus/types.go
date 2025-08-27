@@ -205,12 +205,12 @@ func DefaultServerConfig() *ServerConfig {
 
 // JSONClientConfig represents client configuration in JSON format
 type JSONClientConfig struct {
-	SlaveID         int    `json:"slave_id"`
-	TimeoutMs       int    `json:"timeout_ms"`
-	RetryCount      int    `json:"retry_count"`
-	RetryDelayMs    int    `json:"retry_delay_ms"`
-	ConnectTimeoutMs int   `json:"connect_timeout_ms"`
-	TransportType   string `json:"transport_type"`
+	SlaveID          int    `json:"slave_id"`
+	TimeoutMs        int    `json:"timeout_ms"`
+	RetryCount       int    `json:"retry_count"`
+	RetryDelayMs     int    `json:"retry_delay_ms"`
+	ConnectTimeoutMs int    `json:"connect_timeout_ms"`
+	TransportType    string `json:"transport_type"`
 }
 
 // ToClientConfig converts JSONClientConfig to ClientConfig
@@ -277,12 +277,12 @@ func (cc *ClientConfig) ToJSONClientConfig() *JSONClientConfig {
 	}
 
 	return &JSONClientConfig{
-		SlaveID:         int(cc.SlaveID),
-		TimeoutMs:       int(cc.Timeout / time.Millisecond),
-		RetryCount:      cc.RetryCount,
-		RetryDelayMs:    int(cc.RetryDelay / time.Millisecond),
+		SlaveID:          int(cc.SlaveID),
+		TimeoutMs:        int(cc.Timeout / time.Millisecond),
+		RetryCount:       cc.RetryCount,
+		RetryDelayMs:     int(cc.RetryDelay / time.Millisecond),
 		ConnectTimeoutMs: int(cc.ConnectTimeout / time.Millisecond),
-		TransportType:   transportType,
+		TransportType:    transportType,
 	}
 }
 
