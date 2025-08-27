@@ -35,7 +35,7 @@ func main() {
 	if err := testTCPConnection(cfg.Connection.GetFullAddress(), cfg.Connection.GetTimeout()); err != nil {
 		log.Fatalf("TCP connection failed: %v", err)
 	}
-	fmt.Println("✓ Basic TCP connection successful\n")
+	fmt.Println("✓ Basic TCP connection successful")
 
 	// Step 2: Test MODBUS client creation and connection
 	fmt.Println("--- Step 2: Testing MODBUS Client Connection ---")
@@ -48,11 +48,11 @@ func main() {
 		log.Fatalf("MODBUS client connection failed: %v", err)
 	}
 	defer client.Close()
-	fmt.Println("✓ MODBUS client connected successfully\n")
+	fmt.Println("✓ MODBUS client connected successfully")
 
 	// Step 3: Test simple MODBUS operations with detailed error reporting
 	fmt.Println("--- Step 3: Testing MODBUS Operations ---")
-	
+
 	// Test only enabled functions
 	if cfg.Testing.IsTestEnabled("read_holding_registers") {
 		fmt.Println("Testing Read Holding Registers (Function Code 0x03)...")
@@ -90,19 +90,19 @@ func testTCPConnection(address string, timeout time.Duration) error {
 		return err
 	}
 	defer conn.Close()
-	
+
 	// Try to set a short read timeout and see if we can detect any response
 	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
 	buffer := make([]byte, 1024)
 	n, err := conn.Read(buffer)
-	
+
 	if err != nil {
 		// This is expected - most MODBUS devices won't send data without a request
 		fmt.Printf("  No immediate data from server (expected): %v\n", err)
 	} else {
 		fmt.Printf("  Received %d bytes immediately: %x\n", n, buffer[:n])
 	}
-	
+
 	return nil
 }
 
@@ -111,7 +111,7 @@ func testReadHoldingRegisters(client *modbus.Client, cfg *config.Config) {
 	addr := cfg.Testing.TestAddresses["holding_registers"]
 	registers, err := client.ReadHoldingRegisters(addr.GetAddress(), addr.GetQuantity())
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		fmt.Printf("  ✗ Failed after %v: %v\n", duration, err)
 	} else {
@@ -124,7 +124,7 @@ func testReadCoils(client *modbus.Client, cfg *config.Config) {
 	addr := cfg.Testing.TestAddresses["coils"]
 	coils, err := client.ReadCoils(addr.GetAddress(), addr.GetQuantity())
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		fmt.Printf("  ✗ Failed after %v: %v\n", duration, err)
 	} else {
@@ -137,7 +137,7 @@ func testReadInputRegisters(client *modbus.Client, cfg *config.Config) {
 	addr := cfg.Testing.TestAddresses["input_registers"]
 	registers, err := client.ReadInputRegisters(addr.GetAddress(), addr.GetQuantity())
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		fmt.Printf("  ✗ Failed after %v: %v\n", duration, err)
 	} else {
@@ -150,7 +150,7 @@ func testReadDiscreteInputs(client *modbus.Client, cfg *config.Config) {
 	addr := cfg.Testing.TestAddresses["discrete_inputs"]
 	inputs, err := client.ReadDiscreteInputs(addr.GetAddress(), addr.GetQuantity())
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		fmt.Printf("  ✗ Failed after %v: %v\n", duration, err)
 	} else {
@@ -162,7 +162,7 @@ func testDeviceIdentification(client *modbus.Client, cfg *config.Config) {
 	startTime := time.Now()
 	deviceID, moreFollows, nextObjectID, err := client.ReadDeviceIdentification(modbuslib.DeviceIDReadBasic, 0)
 	duration := time.Since(startTime)
-	
+
 	if err != nil {
 		fmt.Printf("  ✗ Failed after %v: %v\n", duration, err)
 	} else {
