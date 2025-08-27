@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"time"
 
 	modbus "github.com/adibhanna/modbus-go"
 	"github.com/adibhanna/modbus-go/config"
