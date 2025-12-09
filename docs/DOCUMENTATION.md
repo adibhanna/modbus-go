@@ -5,16 +5,17 @@
 2. [Architecture Overview](#architecture-overview)
 3. [Quick Start](#quick-start)
 4. [Configuration](#configuration)
-5. [Core Concepts](#core-concepts)
-6. [Function Codes Reference](#function-codes-reference)
-7. [Client Usage](#client-usage)
-8. [Server Usage](#server-usage)
-9. [Advanced Features](#advanced-features)
-10. [Transport Layers](#transport-layers)
-11. [Error Handling](#error-handling)
-12. [Testing](#testing)
-13. [Performance Considerations](#performance-considerations)
-14. [Troubleshooting](#troubleshooting)
+5. [New Features](#new-features)
+6. [Core Concepts](#core-concepts)
+7. [Function Codes Reference](#function-codes-reference)
+8. [Client Usage](#client-usage)
+9. [Server Usage](#server-usage)
+10. [Advanced Features](#advanced-features)
+11. [Transport Layers](#transport-layers)
+12. [Error Handling](#error-handling)
+13. [Testing](#testing)
+14. [Performance Considerations](#performance-considerations)
+15. [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
@@ -25,6 +26,9 @@ ModbusGo is a comprehensive, production-ready MODBUS protocol implementation in 
 - **Multiple Transports**: TCP/IP, RTU (Serial), and ASCII
 - **Concurrent Safe**: Thread-safe operations with proper synchronization
 - **Extensible Architecture**: Clean interfaces for custom implementations
+- **Auto-Reconnect**: Automatic connection recovery on failure
+- **Broadcast Support**: Send commands to all devices (slave ID 0)
+- **Graceful Shutdown**: Server shutdown with timeout and proper cleanup
 - **Production Ready**: Comprehensive error handling and recovery
 - **Well Tested**: Extensive test coverage for all components
 
@@ -467,6 +471,386 @@ err := config.SaveClientConfigToJSON("my-device-config.json")
 
 // Load from file in future
 client, err := modbus.NewTCPClientFromJSONFile("my-device-config.json", "192.168.1.102:502")
+```
+
+## New Features
+
+### Auto-Reconnect
+
+The client supports automatic reconnection when the connection is lost:
+
+```go
+client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+defer client.Close()
+
+// Enable auto-reconnect
+client.SetAutoReconnect(true)
+
+// Now if the connection is lost during operations,
+// the client will automatically attempt to reconnect
+values, err := client.ReadHoldingRegisters(0, 10)
+if err != nil {
+    // Error only occurs if reconnect also fails
+    log.Printf("Failed after reconnect attempt: %v", err)
+}
+
+// Check auto-reconnect status
+if client.GetAutoReconnect() {
+    log.Println("Auto-reconnect is enabled")
+}
+```
+
+### Broadcast Support
+
+MODBUS supports broadcast messages (slave ID 0) for write operations where no response is expected:
+
+```go
+client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+defer client.Close()
+
+// Broadcast write single coil to all devices
+err := client.BroadcastWriteSingleCoil(0, true)
+
+// Broadcast write single register to all devices
+err = client.BroadcastWriteSingleRegister(100, 1234)
+
+// Broadcast write multiple coils to all devices
+err = client.BroadcastWriteMultipleCoils(0, []bool{true, false, true, true})
+
+// Broadcast write multiple registers to all devices
+err = client.BroadcastWriteMultipleRegisters(100, []uint16{1, 2, 3, 4})
+```
+
+**Note**: Broadcast messages do not receive responses. They are useful for:
+- Synchronizing multiple devices simultaneously
+- Emergency stops across all devices
+- System-wide configuration changes
+- Resetting all devices to a known state
+
+### Graceful Server Shutdown
+
+The TCP server supports graceful shutdown with configurable timeout:
+
+```go
+// Create and start server
+server, _ := modbus.NewTCPServer(":502", dataStore)
+go func() {
+    if err := server.Start(); err != nil {
+        log.Printf("Server error: %v", err)
+    }
+}()
+
+// ... server runs ...
+
+// Option 1: Simple stop (waits for all connections to close)
+err := server.Stop()
+
+// Option 2: Stop with timeout (returns error if timeout exceeded)
+err = server.StopWithTimeout(5 * time.Second)
+if err != nil {
+    log.Printf("Server shutdown timed out: %v", err)
+    // Connections were forcibly closed after timeout
+}
+```
+
+### Additional Diagnostic Client Methods
+
+Complete support for all MODBUS diagnostic functions:
+
+```go
+// Get communication event counter (FC 0x0B)
+status, eventCount, err := client.GetCommEventCounter()
+// status: 0xFFFF = ready, 0x0000 = not ready
+// eventCount: number of successful message completions
+fmt.Printf("Status: 0x%04X, Events: %d\n", status, eventCount)
+
+// Get communication event log (FC 0x0C)
+status, eventCount, messageCount, events, err := client.GetCommEventLog()
+// events: byte array of event codes
+fmt.Printf("Messages: %d, Events: %d\n", messageCount, eventCount)
+for i, ev := range events {
+    fmt.Printf("Event %d: 0x%02X\n", i, ev)
+}
+
+// Report server ID (FC 0x11)
+serverData, err := client.ReportServerID()
+// serverData includes run indicator and server-specific identification
+fmt.Printf("Server ID data: %v\n", serverData)
+if len(serverData) > 0 {
+    runIndicator := serverData[0] // 0xFF = ON, 0x00 = OFF
+    fmt.Printf("Run indicator: 0x%02X\n", runIndicator)
+}
+```
+
+### Thread-Safe Serial Transports
+
+RTU and ASCII transports now include mutex protection for thread safety:
+
+```go
+// RTU transport is safe for concurrent use
+rtuTransport := transport.NewRTUTransport(config)
+
+// Multiple goroutines can safely use the same transport
+var wg sync.WaitGroup
+for i := 0; i < 10; i++ {
+    wg.Add(1)
+    go func(id int) {
+        defer wg.Done()
+        // Safe concurrent access
+        resp, err := rtuTransport.SendRequest(1, request)
+        // ...
+    }(i)
+}
+wg.Wait()
+```
+
+### High-Level Data Type Helpers
+
+The library provides convenient methods for reading and writing multi-register data types:
+
+```go
+client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+defer client.Close()
+
+// Read/Write 32-bit integers (uses 2 registers)
+val32, err := client.ReadUint32(100)
+err = client.WriteUint32(100, 12345678)
+
+// Read/Write 64-bit integers (uses 4 registers)
+val64, err := client.ReadUint64(200)
+err = client.WriteUint64(200, 123456789012345)
+
+// Read/Write 32-bit floats
+floatVal, err := client.ReadFloat32(300)
+err = client.WriteFloat32(300, 3.14159)
+
+// Read/Write 64-bit floats
+float64Val, err := client.ReadFloat64(400)
+err = client.WriteFloat64(400, 3.141592653589793)
+
+// Read/Write signed integers
+int32Val, err := client.ReadInt32(500)
+err = client.WriteInt32(500, -12345)
+
+// Read/Write multiple values at once
+uint32s, err := client.ReadUint32s(600, 5) // Read 5 uint32 values
+err = client.WriteFloat32s(700, []float32{1.1, 2.2, 3.3})
+
+// Read/Write raw bytes
+bytes, err := client.ReadBytes(800, 20) // Read 20 bytes
+err = client.WriteBytes(800, []byte{0x01, 0x02, 0x03, 0x04})
+
+// Read/Write strings
+str, err := client.ReadString(900, 32) // Read up to 32 chars
+err = client.WriteString(900, "Hello MODBUS", 32)
+
+// Single register/coil read helpers
+coilVal, err := client.ReadCoil(0)           // Read single coil
+discreteVal, err := client.ReadDiscreteInput(0) // Read single discrete input
+regVal, err := client.ReadHoldingRegister(0)    // Read single holding register
+inputVal, err := client.ReadInputRegister(0)    // Read single input register
+
+// Read from input registers
+inputFloat, err := client.ReadInputFloat32(1000)
+inputUint32, err := client.ReadInputUint32(1000)
+```
+
+### Endianness and Word Order Configuration
+
+Different devices use different byte/word ordering. Configure the encoding to match your device:
+
+```go
+client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+
+// Default is Big Endian, High Word First (most common in MODBUS)
+// This is the standard MODBUS byte order
+
+// For devices using different byte ordering:
+client.SetEncoding(modbus.LittleEndian, modbus.HighWordFirst)
+
+// Or for different word ordering:
+client.SetEncoding(modbus.BigEndian, modbus.LowWordFirst)
+
+// Check current encoding
+enc := client.GetEncoding()
+fmt.Printf("Byte Order: %v, Word Order: %v\n", enc.ByteOrder, enc.WordOrder)
+
+// Encoding affects all multi-byte operations:
+// - ReadUint32/WriteUint32
+// - ReadFloat32/WriteFloat32
+// - ReadUint64/WriteUint64
+// - ReadFloat64/WriteFloat64
+// - ReadBytes/WriteBytes
+// - ReadString/WriteString
+```
+
+**Common device encoding configurations:**
+
+| Device/Manufacturer | Byte Order | Word Order |
+|---------------------|------------|------------|
+| Most MODBUS devices | BigEndian | HighWordFirst |
+| Some Siemens PLCs | BigEndian | LowWordFirst |
+| Some ABB devices | LittleEndian | HighWordFirst |
+
+### TLS Support for TCP Transport
+
+Secure your MODBUS TCP communications with TLS encryption:
+
+```go
+import (
+    "crypto/tls"
+    "crypto/x509"
+    "io/ioutil"
+    "github.com/adibhanna/modbus-go/transport"
+)
+
+// Basic TLS with server certificate verification
+tlsConfig := &tls.Config{
+    MinVersion: tls.VersionTLS12,
+}
+
+tcpTransport := transport.NewTLSTransport("192.168.1.100:802", tlsConfig)
+if err := tcpTransport.Connect(); err != nil {
+    log.Fatal(err)
+}
+defer tcpTransport.Close()
+
+// With client certificate authentication (mutual TLS)
+cert, err := tls.LoadX509KeyPair("client-cert.pem", "client-key.pem")
+if err != nil {
+    log.Fatal(err)
+}
+
+caCert, err := ioutil.ReadFile("ca-cert.pem")
+if err != nil {
+    log.Fatal(err)
+}
+caCertPool := x509.NewCertPool()
+caCertPool.AppendCertsFromPEM(caCert)
+
+tlsConfig := &tls.Config{
+    Certificates: []tls.Certificate{cert},
+    RootCAs:      caCertPool,
+    MinVersion:   tls.VersionTLS12,
+}
+
+secureTransport := transport.NewTLSTransport("192.168.1.100:802", tlsConfig)
+
+// Skip certificate verification (NOT recommended for production)
+insecureConfig := &tls.Config{
+    InsecureSkipVerify: true,
+}
+```
+
+### RTU over TCP Transport
+
+For serial-to-Ethernet converters that use RTU framing over TCP (not standard MODBUS TCP):
+
+```go
+import "github.com/adibhanna/modbus-go/transport"
+
+// RTU over TCP uses RTU framing (slave ID + PDU + CRC) over TCP connection
+// This is common with serial-to-Ethernet gateways that don't translate to MODBUS TCP
+
+rtuOverTCP := transport.NewRTUOverTCPTransport("192.168.1.100:4001")
+
+if err := rtuOverTCP.Connect(); err != nil {
+    log.Fatal(err)
+}
+defer rtuOverTCP.Close()
+
+// Create client with RTU over TCP transport
+client := modbus.NewClient(rtuOverTCP)
+client.SetSlaveID(1)
+
+// Use normally - the transport handles RTU framing over TCP
+values, err := client.ReadHoldingRegisters(0, 10)
+```
+
+**When to use RTU over TCP:**
+- Serial-to-Ethernet converters in "raw" or "transparent" mode
+- Devices that expect RTU framing regardless of transport
+- Legacy systems upgraded with Ethernet adapters
+
+### UDP Transport
+
+For MODBUS over UDP (less reliable but lower latency):
+
+```go
+import "github.com/adibhanna/modbus-go/transport"
+
+// MODBUS over UDP - uses MBAP header like TCP but over UDP
+udpTransport := transport.NewUDPTransport("192.168.1.100:502")
+
+if err := udpTransport.Connect(); err != nil {
+    log.Fatal(err)
+}
+defer udpTransport.Close()
+
+// Create client with UDP transport
+client := modbus.NewClient(udpTransport)
+client.SetSlaveID(1)
+
+// Use normally
+values, err := client.ReadHoldingRegisters(0, 10)
+```
+
+**UDP considerations:**
+- No automatic retransmission of lost packets
+- No ordering guarantee
+- Lower latency than TCP
+- Useful for non-critical, high-frequency polling
+- Configure appropriate timeout and retry settings
+
+### Idle Timeout for Connections
+
+Configure automatic connection cleanup after periods of inactivity:
+
+```go
+import "github.com/adibhanna/modbus-go/transport"
+
+tcpTransport := transport.NewTCPTransport("192.168.1.100:502")
+
+// Set idle timeout - connection will be closed after 5 minutes of inactivity
+tcpTransport.SetIdleTimeout(5 * time.Minute)
+
+// Check current idle timeout
+idleTimeout := tcpTransport.GetIdleTimeout()
+
+// Set connect timeout separately
+tcpTransport.SetConnectTimeout(10 * time.Second)
+```
+
+### Custom Logger Support
+
+Add custom logging for debugging and monitoring:
+
+```go
+import "github.com/adibhanna/modbus-go/transport"
+
+// Logger interface - implement Printf method
+type MyLogger struct{}
+
+func (l *MyLogger) Printf(format string, v ...interface{}) {
+    log.Printf("[MODBUS] "+format, v...)
+}
+
+// Set logger on transport
+tcpTransport := transport.NewTCPTransport("192.168.1.100:502")
+tcpTransport.SetLogger(&MyLogger{})
+
+// Also works with RTU over TCP and UDP transports
+rtuOverTCP := transport.NewRTUOverTCPTransport("192.168.1.100:4001")
+rtuOverTCP.SetLogger(&MyLogger{})
+
+udpTransport := transport.NewUDPTransport("192.168.1.100:502")
+udpTransport.SetLogger(&MyLogger{})
+
+// Use standard log package
+type StdLogger struct{}
+func (l *StdLogger) Printf(format string, v ...interface{}) {
+    log.Printf(format, v...)
+}
 ```
 
 ## Core Concepts

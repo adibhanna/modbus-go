@@ -385,6 +385,173 @@ func ParseDiagnosticResponse(resp *Response) (uint16, []byte, error) {
 	return subFunction, data, nil
 }
 
+// ParseGetCommEventCounterResponse parses a response PDU for get comm event counter
+func ParseGetCommEventCounterResponse(resp *Response) (uint16, uint16, error) {
+	if resp.IsException() {
+		ec, _ := resp.GetExceptionCode()
+		return 0, 0, modbus.NewModbusError(resp.FunctionCode.FromException(), ec, "")
+	}
+
+	if len(resp.Data) != 4 {
+		return 0, 0, fmt.Errorf("invalid get comm event counter response: expected 4 bytes, got %d", len(resp.Data))
+	}
+
+	status, err := DecodeUint16(resp.Data[0:2])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid get comm event counter response: %w", err)
+	}
+
+	eventCount, err := DecodeUint16(resp.Data[2:4])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid get comm event counter response: %w", err)
+	}
+
+	return status, eventCount, nil
+}
+
+// ParseGetCommEventLogResponse parses a response PDU for get comm event log
+func ParseGetCommEventLogResponse(resp *Response) (uint16, uint16, uint16, []byte, error) {
+	if resp.IsException() {
+		ec, _ := resp.GetExceptionCode()
+		return 0, 0, 0, nil, modbus.NewModbusError(resp.FunctionCode.FromException(), ec, "")
+	}
+
+	if len(resp.Data) < 7 {
+		return 0, 0, 0, nil, fmt.Errorf("invalid get comm event log response: need at least 7 bytes, got %d", len(resp.Data))
+	}
+
+	byteCount := int(resp.Data[0])
+	if len(resp.Data) != 1+byteCount {
+		return 0, 0, 0, nil, fmt.Errorf("invalid get comm event log response: expected %d data bytes, got %d",
+			byteCount, len(resp.Data)-1)
+	}
+
+	status, err := DecodeUint16(resp.Data[1:3])
+	if err != nil {
+		return 0, 0, 0, nil, fmt.Errorf("invalid get comm event log response: %w", err)
+	}
+
+	eventCount, err := DecodeUint16(resp.Data[3:5])
+	if err != nil {
+		return 0, 0, 0, nil, fmt.Errorf("invalid get comm event log response: %w", err)
+	}
+
+	messageCount, err := DecodeUint16(resp.Data[5:7])
+	if err != nil {
+		return 0, 0, 0, nil, fmt.Errorf("invalid get comm event log response: %w", err)
+	}
+
+	events := make([]byte, len(resp.Data)-7)
+	copy(events, resp.Data[7:])
+
+	return status, eventCount, messageCount, events, nil
+}
+
+// ParseReportServerIDResponse parses a response PDU for report server ID
+func ParseReportServerIDResponse(resp *Response) ([]byte, error) {
+	if resp.IsException() {
+		ec, _ := resp.GetExceptionCode()
+		return nil, modbus.NewModbusError(resp.FunctionCode.FromException(), ec, "")
+	}
+
+	if len(resp.Data) < 2 {
+		return nil, fmt.Errorf("invalid report server ID response: need at least 2 bytes")
+	}
+
+	byteCount := int(resp.Data[0])
+	if len(resp.Data) != 1+byteCount {
+		return nil, fmt.Errorf("invalid report server ID response: expected %d data bytes, got %d",
+			byteCount, len(resp.Data)-1)
+	}
+
+	// Return everything after the byte count (includes run indicator and server ID)
+	serverData := make([]byte, byteCount)
+	copy(serverData, resp.Data[1:])
+
+	return serverData, nil
+}
+
+// ParseReadFileRecordResponse parses a response PDU for read file record
+func ParseReadFileRecordResponse(resp *Response, requestedRecords []modbus.FileRecord) ([]modbus.FileRecord, error) {
+	if resp.IsException() {
+		ec, _ := resp.GetExceptionCode()
+		return nil, modbus.NewModbusError(resp.FunctionCode.FromException(), ec, "")
+	}
+
+	if len(resp.Data) < 1 {
+		return nil, fmt.Errorf("invalid read file record response: no byte count")
+	}
+
+	byteCount := int(resp.Data[0])
+	if len(resp.Data) != 1+byteCount {
+		return nil, fmt.Errorf("invalid read file record response: expected %d data bytes, got %d",
+			byteCount, len(resp.Data)-1)
+	}
+
+	// Parse sub-responses
+	result := make([]modbus.FileRecord, 0, len(requestedRecords))
+	offset := 1
+	recordIdx := 0
+
+	for offset < len(resp.Data) && recordIdx < len(requestedRecords) {
+		if offset+2 > len(resp.Data) {
+			return nil, fmt.Errorf("invalid read file record response: truncated sub-response header")
+		}
+
+		subRespLength := int(resp.Data[offset])
+		refType := resp.Data[offset+1]
+
+		if refType != modbus.FileRecordTypeExtended {
+			return nil, fmt.Errorf("invalid read file record response: unexpected reference type %d", refType)
+		}
+
+		dataLength := subRespLength - 1 // Subtract reference type byte
+		if dataLength < 0 || offset+2+dataLength > len(resp.Data) {
+			return nil, fmt.Errorf("invalid read file record response: sub-response data out of bounds")
+		}
+
+		recordData, err := DecodeUint16Slice(resp.Data[offset+2 : offset+2+dataLength])
+		if err != nil {
+			return nil, fmt.Errorf("invalid read file record response: %w", err)
+		}
+
+		record := modbus.FileRecord{
+			ReferenceType: refType,
+			FileNumber:    requestedRecords[recordIdx].FileNumber,
+			RecordNumber:  requestedRecords[recordIdx].RecordNumber,
+			RecordLength:  uint16(len(recordData)),
+			RecordData:    recordData,
+		}
+		result = append(result, record)
+
+		offset += 2 + dataLength
+		recordIdx++
+	}
+
+	return result, nil
+}
+
+// ParseWriteFileRecordResponse parses a response PDU for write file record
+func ParseWriteFileRecordResponse(resp *Response) error {
+	if resp.IsException() {
+		ec, _ := resp.GetExceptionCode()
+		return modbus.NewModbusError(resp.FunctionCode.FromException(), ec, "")
+	}
+
+	// The response is an echo of the request, so we just validate the format
+	if len(resp.Data) < 1 {
+		return fmt.Errorf("invalid write file record response: no byte count")
+	}
+
+	byteCount := int(resp.Data[0])
+	if len(resp.Data) != 1+byteCount {
+		return fmt.Errorf("invalid write file record response: expected %d data bytes, got %d",
+			byteCount, len(resp.Data)-1)
+	}
+
+	return nil
+}
+
 // ParseReadDeviceIdentificationResponse parses a response PDU for read device identification
 func ParseReadDeviceIdentificationResponse(resp *Response) (*modbus.DeviceIdentification, bool, uint8, error) {
 	if resp.IsException() {

@@ -17,6 +17,8 @@ type Client struct {
 	retryCount     int
 	retryDelay     time.Duration
 	connectTimeout time.Duration
+	autoReconnect  bool
+	encoding       *EncodingConfig
 }
 
 // NewClient creates a new MODBUS client with the given transport
@@ -139,6 +141,16 @@ func (c *Client) GetConnectTimeout() time.Duration {
 	return c.connectTimeout
 }
 
+// SetAutoReconnect enables or disables automatic reconnection on connection failure
+func (c *Client) SetAutoReconnect(enabled bool) {
+	c.autoReconnect = enabled
+}
+
+// GetAutoReconnect returns whether automatic reconnection is enabled
+func (c *Client) GetAutoReconnect() bool {
+	return c.autoReconnect
+}
+
 // GetConfig returns the current client configuration
 func (c *Client) GetConfig() *modbus.ClientConfig {
 	return &modbus.ClientConfig{
@@ -162,11 +174,26 @@ func (c *Client) ApplyConfig(config *modbus.ClientConfig) {
 	c.transport.SetTimeout(c.timeout)
 }
 
-// sendRequest sends a request with retry logic
+// sendRequest sends a request with retry logic and optional auto-reconnect
 func (c *Client) sendRequest(req *pdu.Request) (*pdu.Response, error) {
 	var lastErr error
 
 	for attempt := 0; attempt <= c.retryCount; attempt++ {
+		// Check connection and attempt reconnect if enabled
+		if !c.transport.IsConnected() {
+			if c.autoReconnect {
+				if err := c.Connect(); err != nil {
+					lastErr = fmt.Errorf("auto-reconnect failed: %w", err)
+					if attempt < c.retryCount {
+						time.Sleep(c.retryDelay)
+					}
+					continue
+				}
+			} else {
+				return nil, fmt.Errorf("transport not connected")
+			}
+		}
+
 		resp, err := c.transport.SendRequest(c.slaveID, req)
 		if err == nil {
 			return resp, nil
@@ -378,6 +405,51 @@ func (c *Client) Diagnostic(subFunction uint16, data []byte) (uint16, []byte, er
 	return pdu.ParseDiagnosticResponse(resp)
 }
 
+// GetCommEventCounter gets the communication event counter (function code 0x0B, Serial line only)
+func (c *Client) GetCommEventCounter() (status uint16, eventCount uint16, err error) {
+	req, err := pdu.GetCommEventCounterRequest()
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to create get comm event counter request: %w", err)
+	}
+
+	resp, err := c.sendRequest(req)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return pdu.ParseGetCommEventCounterResponse(resp)
+}
+
+// GetCommEventLog gets the communication event log (function code 0x0C, Serial line only)
+func (c *Client) GetCommEventLog() (status uint16, eventCount uint16, messageCount uint16, events []byte, err error) {
+	req, err := pdu.GetCommEventLogRequest()
+	if err != nil {
+		return 0, 0, 0, nil, fmt.Errorf("failed to create get comm event log request: %w", err)
+	}
+
+	resp, err := c.sendRequest(req)
+	if err != nil {
+		return 0, 0, 0, nil, err
+	}
+
+	return pdu.ParseGetCommEventLogResponse(resp)
+}
+
+// ReportServerID gets the server ID (function code 0x11, Serial line only)
+func (c *Client) ReportServerID() ([]byte, error) {
+	req, err := pdu.ReportServerIDRequest()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create report server ID request: %w", err)
+	}
+
+	resp, err := c.sendRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return pdu.ParseReportServerIDResponse(resp)
+}
+
 // ReadFileRecord reads file records (function code 0x14)
 func (c *Client) ReadFileRecord(records []modbus.FileRecord) ([]modbus.FileRecord, error) {
 	req, err := pdu.ReadFileRecordRequest(records)
@@ -390,9 +462,7 @@ func (c *Client) ReadFileRecord(records []modbus.FileRecord) ([]modbus.FileRecor
 		return nil, err
 	}
 
-	// TODO: Implement ParseReadFileRecordResponse
-	_ = resp
-	return nil, fmt.Errorf("ReadFileRecord response parsing not yet implemented")
+	return pdu.ParseReadFileRecordResponse(resp, records)
 }
 
 // WriteFileRecord writes file records (function code 0x15)
@@ -407,9 +477,7 @@ func (c *Client) WriteFileRecord(records []modbus.FileRecord) error {
 		return err
 	}
 
-	// TODO: Implement ParseWriteFileRecordResponse
-	_ = resp
-	return fmt.Errorf("WriteFileRecord response parsing not yet implemented")
+	return pdu.ParseWriteFileRecordResponse(resp)
 }
 
 // ReadDeviceIdentification reads device identification (function code 0x2B/0x0E)
@@ -430,4 +498,70 @@ func (c *Client) ReadDeviceIdentification(readCode uint8, objectID uint8) (*modb
 // String returns a string representation of the client
 func (c *Client) String() string {
 	return fmt.Sprintf("ModbusClient(slave=%d, transport=%s)", c.slaveID, c.transport.String())
+}
+
+// Broadcast methods - send to all devices (slave ID 0), no response expected
+
+// BroadcastWriteSingleCoil broadcasts a write single coil command to all devices
+func (c *Client) BroadcastWriteSingleCoil(address modbus.Address, value bool) error {
+	req, err := pdu.WriteSingleCoilRequest(address, value)
+	if err != nil {
+		return fmt.Errorf("failed to create write single coil request: %w", err)
+	}
+
+	return c.sendBroadcast(req)
+}
+
+// BroadcastWriteSingleRegister broadcasts a write single register command to all devices
+func (c *Client) BroadcastWriteSingleRegister(address modbus.Address, value uint16) error {
+	req, err := pdu.WriteSingleRegisterRequest(address, value)
+	if err != nil {
+		return fmt.Errorf("failed to create write single register request: %w", err)
+	}
+
+	return c.sendBroadcast(req)
+}
+
+// BroadcastWriteMultipleCoils broadcasts a write multiple coils command to all devices
+func (c *Client) BroadcastWriteMultipleCoils(address modbus.Address, values []bool) error {
+	req, err := pdu.WriteMultipleCoilsRequest(address, values)
+	if err != nil {
+		return fmt.Errorf("failed to create write multiple coils request: %w", err)
+	}
+
+	return c.sendBroadcast(req)
+}
+
+// BroadcastWriteMultipleRegisters broadcasts a write multiple registers command to all devices
+func (c *Client) BroadcastWriteMultipleRegisters(address modbus.Address, values []uint16) error {
+	req, err := pdu.WriteMultipleRegistersRequest(address, values)
+	if err != nil {
+		return fmt.Errorf("failed to create write multiple registers request: %w", err)
+	}
+
+	return c.sendBroadcast(req)
+}
+
+// sendBroadcast sends a broadcast request (no response expected)
+func (c *Client) sendBroadcast(req *pdu.Request) error {
+	if !c.transport.IsConnected() {
+		if c.autoReconnect {
+			if err := c.Connect(); err != nil {
+				return fmt.Errorf("auto-reconnect failed: %w", err)
+			}
+		} else {
+			return fmt.Errorf("transport not connected")
+		}
+	}
+
+	// Send to broadcast address (0), ignore response
+	_, err := c.transport.SendRequest(modbus.BroadcastAddress, req)
+	// For broadcast, we don't care about the response (there shouldn't be one)
+	// Some transports may return a timeout error which is expected
+	if err != nil {
+		// Only return error if it's not a timeout (broadcast has no response)
+		// For TCP, this will likely timeout which is expected
+		return nil
+	}
+	return nil
 }

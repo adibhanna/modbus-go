@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/adibhanna/modbus-go/modbus"
@@ -60,6 +61,7 @@ type RTUTransport struct {
 	config    *SerialConfig
 	port      serial.Port
 	connected bool
+	mutex     sync.Mutex
 }
 
 // NewRTUTransport creates a new RTU transport
@@ -71,6 +73,9 @@ func NewRTUTransport(config *SerialConfig) *RTUTransport {
 
 // Connect opens the serial port
 func (t *RTUTransport) Connect() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if t.connected {
 		return nil
 	}
@@ -100,6 +105,9 @@ func (t *RTUTransport) Connect() error {
 
 // Close closes the serial port
 func (t *RTUTransport) Close() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if !t.connected || t.port == nil {
 		return nil
 	}
@@ -112,11 +120,15 @@ func (t *RTUTransport) Close() error {
 
 // IsConnected returns true if the transport is connected
 func (t *RTUTransport) IsConnected() bool {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	return t.connected
 }
 
 // SetTimeout sets the response timeout
 func (t *RTUTransport) SetTimeout(timeout time.Duration) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	t.config.Timeout = timeout
 	if t.connected && t.port != nil {
 		_ = t.port.SetReadTimeout(timeout)
@@ -125,11 +137,16 @@ func (t *RTUTransport) SetTimeout(timeout time.Duration) {
 
 // GetTimeout returns the current timeout
 func (t *RTUTransport) GetTimeout() time.Duration {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	return t.config.Timeout
 }
 
 // SendRequest sends a request PDU and returns the response PDU
 func (t *RTUTransport) SendRequest(slaveID modbus.SlaveID, request *pdu.Request) (*pdu.Response, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if !t.connected {
 		return nil, fmt.Errorf("transport not connected")
 	}
@@ -242,6 +259,7 @@ type ASCIITransport struct {
 	config    *SerialConfig
 	port      serial.Port
 	connected bool
+	mutex     sync.Mutex
 }
 
 // NewASCIITransport creates a new ASCII transport
@@ -253,6 +271,9 @@ func NewASCIITransport(config *SerialConfig) *ASCIITransport {
 
 // Connect opens the serial port
 func (t *ASCIITransport) Connect() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if t.connected {
 		return nil
 	}
@@ -281,6 +302,9 @@ func (t *ASCIITransport) Connect() error {
 
 // Close closes the serial port
 func (t *ASCIITransport) Close() error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if !t.connected || t.port == nil {
 		return nil
 	}
@@ -293,11 +317,15 @@ func (t *ASCIITransport) Close() error {
 
 // IsConnected returns true if the transport is connected
 func (t *ASCIITransport) IsConnected() bool {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	return t.connected
 }
 
 // SetTimeout sets the response timeout
 func (t *ASCIITransport) SetTimeout(timeout time.Duration) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	t.config.Timeout = timeout
 	if t.connected && t.port != nil {
 		_ = t.port.SetReadTimeout(timeout)
@@ -306,11 +334,16 @@ func (t *ASCIITransport) SetTimeout(timeout time.Duration) {
 
 // GetTimeout returns the current timeout
 func (t *ASCIITransport) GetTimeout() time.Duration {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 	return t.config.Timeout
 }
 
 // SendRequest sends a request PDU and returns the response PDU
 func (t *ASCIITransport) SendRequest(slaveID modbus.SlaveID, request *pdu.Request) (*pdu.Response, error) {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if !t.connected {
 		return nil, fmt.Errorf("transport not connected")
 	}

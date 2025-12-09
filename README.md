@@ -4,23 +4,34 @@ A comprehensive, production-ready MODBUS implementation in Go supporting the com
 
 ## 📚 Documentation
 
-- **[Complete Documentation](DOCUMENTATION.md)** - Comprehensive guide covering all features with examples
-- **[API Reference](API_REFERENCE.md)** - Detailed API documentation for all packages
-- **[Configuration Guide](DOCUMENTATION.md#configuration)** - Complete configuration system documentation
+- **[Complete Documentation](docs/DOCUMENTATION.md)** - Comprehensive guide covering all features with examples
+- **[API Reference](docs/API_REFERENCE.md)** - Detailed API documentation for all packages
+- **[Configuration Guide](docs/DOCUMENTATION.md#configuration)** - Complete configuration system documentation
+- **[Transport Guide](docs/TRANSPORTS.md)** - TCP, RTU, and ASCII transport details
 - **[Examples](examples/)** - Ready-to-run example implementations
 - **[Configuration Examples](config-examples/)** - Device-specific configuration templates
 
 ## ✨ Features
 
 - **Complete Protocol Implementation** - All 19 standard MODBUS function codes
-- **Multiple Transport Protocols** - TCP/IP, RTU (serial), and ASCII
-- **Client and Server Support** - Full-featured client and server implementations  
+- **Multiple Transport Protocols** - TCP/IP, TLS, RTU over TCP, UDP, RTU (serial), and ASCII
+- **Client and Server Support** - Full-featured client and server implementations
 - **Flexible Configuration** - JSON-based configuration with device profiles and runtime management
+- **High-Level Data Types** - Read/write uint32, uint64, float32, float64, strings, bytes
+- **Configurable Endianness** - Support for different byte/word orderings
+- **TLS Support** - Secure MODBUS TCP with certificate authentication
+- **RTU over TCP** - Support for serial-to-Ethernet converters
+- **UDP Transport** - Low-latency connectionless MODBUS communication
 - **Advanced Features** - File records, FIFO queues, diagnostics, device identification
+- **Auto-Reconnect** - Automatic connection recovery on failure
+- **Broadcast Support** - Send commands to all devices (slave ID 0)
+- **Graceful Shutdown** - Server shutdown with timeout and proper cleanup
+- **Custom Logging** - Pluggable logger interface for debugging
+- **Idle Timeout** - Automatic cleanup of idle connections
 - **Thread-Safe** - Concurrent-safe operations with proper synchronization
 - **Production Ready** - Comprehensive error handling and recovery mechanisms
 - **Well Tested** - Extensive test coverage for all components
-- **Zero Dependencies** - Uses only Go standard library
+- **Minimal Dependencies** - Only Go standard library plus serial port support
 
 ## 📦 Installation
 

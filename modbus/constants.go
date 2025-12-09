@@ -145,6 +145,11 @@ const (
 	MaxAddress = 0xFFFF
 )
 
+// Broadcast address (no response expected)
+const (
+	BroadcastAddress = 0x00
+)
+
 // Timeout defaults (in milliseconds)
 const (
 	DefaultResponseTimeout = 1000
