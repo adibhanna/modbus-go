@@ -6,3 +6,17 @@ coverage/
 *.prof
 *.test
 *.out
+
+# Compiled binaries
+/tcp_server
+/tcp_client
+/tcp_client_diagnostic
+/advanced_server
+/config_showcase
+/simple_config_client
+/integration_test
+
+# Config files created by examples
+saved-config.json
+runtime-config.json
+coverage.txt
