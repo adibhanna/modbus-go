@@ -36,7 +36,13 @@ A comprehensive, production-ready MODBUS implementation in Go supporting the com
 ## 📦 Installation
 
 ```bash
-go get github.com/adibhanna/modbus-go
+go get github.com/adibhanna/modbus-go@latest
+```
+
+Or use Docker:
+
+```bash
+docker pull adibhanna/modbus-go:latest
 ```
 
 ## 🚀 Quick Start
@@ -384,7 +390,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: See [DOCUMENTATION.md](DOCUMENTATION.md)
-- **API Reference**: See [API_REFERENCE.md](API_REFERENCE.md)
+- **Documentation**: See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)
+- **API Reference**: See [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
+- **Docker Hub**: [adibhanna/modbus-go](https://hub.docker.com/r/adibhanna/modbus-go)
 - **Issues**: [GitHub Issues](https://github.com/adibhanna/modbus-go/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/adibhanna/modbus-go/discussions)
