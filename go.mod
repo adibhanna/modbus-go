@@ -1,6 +1,6 @@
 module github.com/adibhanna/modbus-go
 
-go 1.23
+go 1.25
 
 require go.bug.st/serial v1.6.2
 

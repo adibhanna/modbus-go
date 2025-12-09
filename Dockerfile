@@ -4,7 +4,7 @@
 # =============================================================================
 # Build stage - compiles all binaries
 # =============================================================================
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git make
@@ -71,7 +71,7 @@ CMD ["/app/bin/advanced_server"]
 # =============================================================================
 # Development stage - full development environment
 # =============================================================================
-FROM golang:1.23-alpine AS development
+FROM golang:1.25-alpine AS development
 
 # Install development tools
 RUN apk add --no-cache git make curl bash netcat-openbsd
@@ -97,7 +97,7 @@ CMD ["make", "dev"]
 # =============================================================================
 # Test stage - runs all tests
 # =============================================================================
-FROM golang:1.23-alpine AS test
+FROM golang:1.25-alpine AS test
 
 RUN apk add --no-cache git make
 
@@ -114,7 +114,7 @@ CMD ["go", "test", "-v", "-race", "-coverprofile=coverage.txt", "./..."]
 # =============================================================================
 # CI stage - runs full CI pipeline
 # =============================================================================
-FROM golang:1.23-alpine AS ci
+FROM golang:1.25-alpine AS ci
 
 RUN apk add --no-cache git make curl bash
 

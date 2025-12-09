@@ -16,7 +16,7 @@ on:
     - cron: '0 0 * * 1'
 
 env:
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.25'
 
 jobs:
   lint:
@@ -47,7 +47,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        go-version: ['1.22', '1.23']
+        go-version: ['1.24', '1.25']
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -80,7 +80,7 @@ jobs:
     name: Test (Windows)
     strategy:
       matrix:
-        go-version: ['1.22', '1.23']
+        go-version: ['1.24', '1.25']
     runs-on: windows-latest
 
     steps:
