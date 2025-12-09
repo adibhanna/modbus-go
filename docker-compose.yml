@@ -1,15 +1,27 @@
-version: '3.8'
+# Docker Compose for ModbusGo
+# Usage:
+#   docker compose up                    - Start MODBUS server
+#   docker compose up -d                 - Start in background
+#   docker compose --profile dev up      - Start development environment
+#   docker compose --profile test up     - Run tests
+#   docker compose --profile ci up       - Run CI checks
 
 services:
-  # MODBUS TCP Server
+  # ==========================================================================
+  # Production Services
+  # ==========================================================================
+
+  # MODBUS TCP Server (Advanced)
   modbus-server:
-    build: .
+    build:
+      context: .
+      target: runtime
     container_name: modbus-server
     ports:
       - "502:502"
       - "5502:5502"
     environment:
-      - LOG_LEVEL=info
+      - TZ=UTC
     command: /app/bin/advanced_server
     restart: unless-stopped
     networks:
@@ -20,38 +32,121 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    volumes:
-      - modbus-data:/app/data
-
-  # MODBUS TCP Client (for testing)
-  modbus-client:
-    build: .
-    container_name: modbus-client
-    depends_on:
-      modbus-server:
-        condition: service_healthy
-    environment:
-      - MODBUS_SERVER=modbus-server:5502
-      - LOG_LEVEL=debug
-    command: |
-      sh -c "
-        while true; do
-          echo 'Running MODBUS client test...'
-          /app/bin/tcp_client
-          sleep 30
-        done
-      "
-    networks:
-      - modbus-network
 
   # Simple TCP Server
   simple-server:
-    build: .
+    build:
+      context: .
+      target: runtime
     container_name: simple-modbus-server
     ports:
       - "5503:5502"
     command: /app/bin/tcp_server
     restart: unless-stopped
+    networks:
+      - modbus-network
+
+  # ==========================================================================
+  # Development Services (use --profile dev)
+  # ==========================================================================
+
+  # Development environment with hot reload
+  dev:
+    build:
+      context: .
+      target: development
+    container_name: modbus-dev
+    profiles:
+      - dev
+    ports:
+      - "5502:5502"
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    environment:
+      - CGO_ENABLED=0
+    working_dir: /app
+    command: sh -c "go run ./examples/tcp_server/main.go"
+    networks:
+      - modbus-network
+
+  # ==========================================================================
+  # Testing Services (use --profile test)
+  # ==========================================================================
+
+  # Run unit tests
+  test:
+    build:
+      context: .
+      target: test
+    container_name: modbus-test
+    profiles:
+      - test
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    command: go test -v -race -coverprofile=coverage.txt ./...
+
+  # Run integration tests
+  integration-test:
+    build:
+      context: .
+      target: runtime
+    container_name: modbus-integration-test
+    profiles:
+      - test
+    command: /app/bin/integration_test
+    networks:
+      - modbus-network
+
+  # ==========================================================================
+  # CI Services (use --profile ci)
+  # ==========================================================================
+
+  # Run full CI pipeline
+  ci:
+    build:
+      context: .
+      target: ci
+    container_name: modbus-ci
+    profiles:
+      - ci
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    command: make ci
+
+  # Lint check only
+  lint:
+    build:
+      context: .
+      target: ci
+    container_name: modbus-lint
+    profiles:
+      - ci
+    volumes:
+      - .:/app
+      - go-mod-cache:/go/pkg/mod
+    command: make lint
+
+  # ==========================================================================
+  # Client Services (for testing server)
+  # ==========================================================================
+
+  # MODBUS TCP Client (one-shot test)
+  client:
+    build:
+      context: .
+      target: runtime
+    container_name: modbus-client
+    profiles:
+      - client
+    depends_on:
+      modbus-server:
+        condition: service_healthy
+    environment:
+      - MODBUS_SERVER=modbus-server:5502
+    command: /app/bin/tcp_client
     networks:
       - modbus-network
 
@@ -63,5 +158,5 @@ networks:
         - subnet: 172.20.0.0/24
 
 volumes:
-  modbus-data:
+  go-mod-cache:
     driver: local

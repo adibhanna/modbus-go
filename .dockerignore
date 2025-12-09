@@ -10,6 +10,7 @@ coverage/
 *.out
 *.prof
 *.test
+coverage.txt
 
 # IDE files
 .vscode/
@@ -22,17 +23,31 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Documentation
-*.pdf
+# Documentation (keep these for the image)
+# *.pdf
 
-# Test files
+# Test files (keep test files for test stage)
 test_integration.sh
-*_test.go
 
 # Vendor (will be downloaded in Docker)
 vendor/
 
-# Docker files
+# Docker files (don't include Docker files in build context)
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# Temporary files
+*.tmp
+*.log
+saved-config.json
+runtime-config.json
+
+# Binaries (these are built in Docker)
+/tcp_server
+/tcp_client
+/tcp_client_diagnostic
+/advanced_server
+/config_showcase
+/simple_config_client
+/integration_test

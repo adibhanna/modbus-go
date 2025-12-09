@@ -274,6 +274,55 @@ objects, err := client.ReadDeviceIdentification(
 )
 ```
 
+## 🐳 Docker
+
+Run the MODBUS server and development environment using Docker:
+
+```bash
+# Build and run the MODBUS server
+docker compose up modbus-server
+
+# Run in background
+docker compose up -d modbus-server
+
+# Development with hot reload
+docker compose --profile dev up
+
+# Run tests in Docker
+docker compose --profile test up
+
+# Run CI checks in Docker
+docker compose --profile ci up
+
+# Test client against server
+docker compose --profile client up
+```
+
+### Available Services
+
+| Service | Description | Port |
+|---------|-------------|------|
+| `modbus-server` | Advanced MODBUS TCP server | 502, 5502 |
+| `simple-server` | Simple TCP server | 5503 |
+| `dev` | Development environment | 5502 |
+| `test` | Run unit tests | - |
+| `ci` | Run full CI pipeline | - |
+| `client` | Test client | - |
+
+### Makefile Docker Targets
+
+```bash
+make docker-build   # Build Docker image
+make docker-run     # Run MODBUS server container
+make docker-up      # Start all services with docker-compose
+make docker-down    # Stop all services
+make docker-test    # Run tests in Docker
+make docker-ci      # Run CI checks in Docker
+make docker-dev     # Start development environment
+make docker-clean   # Remove Docker images and containers
+make docker-shell   # Open shell in running container
+```
+
 ## 🧪 Testing
 
 Run the complete test suite:

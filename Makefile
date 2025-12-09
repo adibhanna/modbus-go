@@ -441,6 +441,74 @@ profile-view-cpu: profile-cpu
 profile-view-mem: profile-mem
 	@$(GOCMD) tool pprof -http=:8080 $(BUILD_DIR)/mem.prof
 
+# ==============================================================================
+# Docker targets
+# ==============================================================================
+
+DOCKER_IMAGE_NAME := modbusgo
+DOCKER_COMPOSE := docker compose
+
+## docker-build: Build Docker image
+docker-build:
+	@echo "$(YELLOW)Building Docker image...$(NC)"
+	@docker build -t $(DOCKER_IMAGE_NAME):latest --target runtime .
+	@echo "$(GREEN)✓ Docker image built: $(DOCKER_IMAGE_NAME):latest$(NC)"
+
+## docker-build-dev: Build Docker development image
+docker-build-dev:
+	@echo "$(YELLOW)Building Docker development image...$(NC)"
+	@docker build -t $(DOCKER_IMAGE_NAME):dev --target development .
+	@echo "$(GREEN)✓ Docker dev image built: $(DOCKER_IMAGE_NAME):dev$(NC)"
+
+## docker-run: Run MODBUS server in Docker
+docker-run: docker-build
+	@echo "$(YELLOW)Starting MODBUS server in Docker...$(NC)"
+	@docker run --rm -p 5502:5502 --name modbus-server $(DOCKER_IMAGE_NAME):latest
+
+## docker-up: Start all services with docker-compose
+docker-up:
+	@echo "$(YELLOW)Starting services with docker-compose...$(NC)"
+	@$(DOCKER_COMPOSE) up -d
+	@echo "$(GREEN)✓ Services started$(NC)"
+
+## docker-down: Stop all services
+docker-down:
+	@echo "$(YELLOW)Stopping services...$(NC)"
+	@$(DOCKER_COMPOSE) down
+	@echo "$(GREEN)✓ Services stopped$(NC)"
+
+## docker-logs: View logs from services
+docker-logs:
+	@$(DOCKER_COMPOSE) logs -f
+
+## docker-test: Run tests in Docker
+docker-test:
+	@echo "$(YELLOW)Running tests in Docker...$(NC)"
+	@$(DOCKER_COMPOSE) --profile test up --build test
+	@echo "$(GREEN)✓ Tests completed$(NC)"
+
+## docker-ci: Run CI pipeline in Docker
+docker-ci:
+	@echo "$(YELLOW)Running CI pipeline in Docker...$(NC)"
+	@$(DOCKER_COMPOSE) --profile ci up --build ci
+	@echo "$(GREEN)✓ CI pipeline completed$(NC)"
+
+## docker-dev: Start development environment
+docker-dev:
+	@echo "$(YELLOW)Starting development environment...$(NC)"
+	@$(DOCKER_COMPOSE) --profile dev up --build dev
+
+## docker-clean: Remove Docker images and volumes
+docker-clean:
+	@echo "$(YELLOW)Cleaning Docker resources...$(NC)"
+	@$(DOCKER_COMPOSE) down -v --rmi local 2>/dev/null || true
+	@docker rmi $(DOCKER_IMAGE_NAME):latest $(DOCKER_IMAGE_NAME):dev 2>/dev/null || true
+	@echo "$(GREEN)✓ Docker resources cleaned$(NC)"
+
+## docker-shell: Open shell in development container
+docker-shell:
+	@docker run --rm -it -v $(PWD):/app -w /app $(DOCKER_IMAGE_NAME):dev /bin/sh
+
 # Quick command aliases
 t: test
 b: build
@@ -448,3 +516,5 @@ c: clean
 l: lint
 f: fmt
 cov: coverage
+d: docker-up
+ds: docker-down
