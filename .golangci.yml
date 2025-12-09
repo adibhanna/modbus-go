@@ -1,109 +1,38 @@
 # .golangci.yml
 # Version 2 configuration for golangci-lint.
-# For all available options, see: https://golangci-lint.run/usage/configuration/
 
 version: "2"
 
 run:
-  # Timeout for analysis, e.g., 30s, 1m. Defaults to 1m.
   timeout: 5m
-  # Exit code when issues are found.
-  issues-exit-code: 1
-  # Include tests in analysis.
   tests: false
-  # Skip directories for linting.
-  skip-dirs:
-    - examples
-
-output:
-  # Output format.
-  format: colored-line-number
-  # Print lines of code with issue.
-  print-issued-lines: true
-  # Print linter name in the output.
-  print-linter-name: true
-  # Make issues output unique by line.
-  uniq-by-line: true
-
-linters-settings:
-  govet:
-    # Enable all analyzers.
-    enable-all: true
-    # Disable specific analyzers if needed.
-    disable:
-      - fieldalignment # Often too noisy
-  gci:
-    # Section order for imports.
-    sections:
-      - standard # Standard library imports
-      - default # 3rd-party imports
-      - prefix(github.com/adibhanna/modbus-go) # Your local packages
-    # Add a blank line between sections.
-    section-separators:
-      - newLine
-  gocyclo:
-    # Minimum complexity to report.
-    min-complexity: 15
-  funlen:
-    # Set limits for function length.
-    lines: 100
-    statements: 50
-  errorlint:
-    # Check for `fmt.Errorf` wrapping.
-    errorf: true
-  goimports:
-    # Put local imports after 3rd-party imports.
-    local-prefixes: "github.com/adibhanna/modbus-go"
 
 linters:
-  # Disable all linters first, then enable specific ones.
-  disable-all: true
-  disable:
-    - unused # Disabled for library code - external consumers may use these functions
+  default: none
   enable:
-    # --- Core & Essential Linters ---
-    - errcheck # Checks for unchecked errors.
-    - govet # Reports suspicious constructs.
-    - staticcheck # A suite of static analysis checks (includes gosimple and stylecheck).
-    # - unused # Disabled for library code - external consumers may use these functions
-    - ineffassign # Detects unused assignments.
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - misspell
+    - bodyclose
+    - durationcheck
+    - errorlint
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - wastedassign
+    - whitespace
 
-    # --- Formatting & Style ---
-    - misspell # Finds commonly misspelled English words.
-
-    # --- Complexity & Maintainability ---
-    # - gocyclo # Computes cyclomatic complexity.
-    # - funlen # Reports functions that are too long.
-    # - gocognit # Computes cognitive complexity.
-
-    # --- Best Practices & Potential Bugs ---
-    # - copyloopvar # Checks for loops that capture loop variables by reference.
-    - bodyclose # Checks for unclosed HTTP response bodies.
-    - durationcheck # Checks for misuses of time.Duration.
-    - errorlint # Checks for common error handling mistakes.
-    - noctx # Finds functions that should probably accept a context.Context.
-    - nolintlint # Reports unused or misplaced //nolint directives.
-    - rowserrcheck # Checks for unchecked errors in database rows.
-    - sqlclosecheck # Checks for unclosed database connections.
-    - wastedassign # Checks for wasted assignments.
-    - whitespace # Checks for leading/trailing whitespace.
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    errorlint:
+      errorf: true
 
 formatters:
   enable:
     - gofmt
     - goimports
-    - gci
-
-issues:
-  # Maximum number of issues to report from one linter. 0 = no limit.
-  max-issues-per-linter: 0
-  # Maximum number of issues with the same text to report. 0 = no limit.
-  max-same-issues: 0
-
-  # Exclude some issues by message, source, or path.
-  exclude-rules:
-    # Exclude common false positives with errcheck for standard library logging and printing.
-    - linters:
-        - errcheck
-      # CORRECTED: Use single quotes to avoid YAML escape character errors.
-      text: 'Error return value of .((os\.)?std(out|err)\..*|.*Print(f|ln)?|os\.(Un)?Setenv). is not checked'

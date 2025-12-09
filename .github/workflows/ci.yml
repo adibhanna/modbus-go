@@ -17,7 +17,6 @@ on:
 
 env:
   GO_VERSION: '1.21'
-  CGO_ENABLED: '0'
 
 jobs:
   lint:
@@ -35,7 +34,7 @@ jobs:
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.7.2
 
       - name: Run golangci-lint
         run: make lint
@@ -100,14 +99,14 @@ jobs:
 
       - name: Build library
         run: |
-          GOARCH=${{ matrix.arch }} go build -v ./...
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} go build -v ./...
 
       - name: Build examples
         run: |
           for dir in examples/*/; do
             if [ -f "$dir/main.go" ]; then
               echo "Building $dir"
-              GOARCH=${{ matrix.arch }} go build -v -o build/$(basename $dir) $dir/main.go
+              CGO_ENABLED=0 GOARCH=${{ matrix.arch }} go build -v -o build/$(basename $dir) $dir/main.go
             fi
           done
         shell: bash

@@ -348,8 +348,8 @@ func (t *TCPTransport) receiveADU() (*MBAPHeader, *pdu.PDU, error) {
 
 	// Read PDU (length includes UnitID which we already have in header)
 	pduBytes := make([]byte, header.Length-1)
-	if _, err := io.ReadFull(t.conn, pduBytes); err != nil {
-		return nil, nil, fmt.Errorf("failed to read PDU: %w", err)
+	if _, readErr := io.ReadFull(t.conn, pduBytes); readErr != nil {
+		return nil, nil, fmt.Errorf("failed to read PDU: %w", readErr)
 	}
 
 	responsePDU, err := pdu.ParsePDU(pduBytes)
