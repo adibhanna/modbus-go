@@ -50,7 +50,7 @@ COPY --from=builder /build/README.md /app/docs/
 COPY --from=builder /build/docs/ /app/docs/
 
 # Copy example configs
-COPY --from=builder /build/examples/tcp_client/config.json /app/config.json
+COPY --from=builder /build/config-examples/ /app/config-examples/
 
 # Change ownership
 RUN chown -R modbus:modbus /app
