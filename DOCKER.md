@@ -17,8 +17,9 @@ docker run -d -p 502:502 -p 5502:5502 adibhanna/modbus-go:latest
 | Tag | Description |
 |-----|-------------|
 | `latest` | Latest stable release |
-| `v1.1.0` | Version 1.1.0 - Go 1.25, Docker support |
-| `v1.0.0` | Version 1.0.0 - Initial release |
+| `v1.3.0` | Version 1.3.0 - Retract stale proxy versions, all features |
+| `v1.1.0` | Retracted - use v1.3.0 instead |
+| `v1.0.0` | Retracted - use v1.3.0 instead |
 
 ## Features
 

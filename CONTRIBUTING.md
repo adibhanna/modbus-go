@@ -64,7 +64,7 @@ By participating in this project, you agree to abide by our Code of Conduct:
 
 ### Prerequisites
 
-- Go 1.20 or higher
+- Go 1.25 or higher
 - Git
 - Make (optional but recommended)
 
@@ -467,8 +467,8 @@ What should happen
 What actually happens
 
 ## Environment
-- ModbusGo version: v1.0.0
-- Go version: 1.21
+- ModbusGo version: v1.3.0
+- Go version: 1.25
 - OS: Ubuntu 22.04
 
 ## Code Sample

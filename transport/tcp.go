@@ -305,15 +305,15 @@ func (t *TCPTransport) sendADU(header *MBAPHeader, pduBytes []byte) error {
 		return fmt.Errorf("failed to set write deadline: %w", err)
 	}
 
-	// Send MBAP header
+	// Combine MBAP header and PDU into a single write to avoid sending
+	// two separate TCP packets (Nagle's algorithm may not coalesce them)
 	mbapBytes := header.EncodeMBAP()
-	if _, err := t.conn.Write(mbapBytes); err != nil {
-		return fmt.Errorf("failed to write MBAP header: %w", err)
-	}
+	adu := make([]byte, len(mbapBytes)+len(pduBytes))
+	copy(adu, mbapBytes)
+	copy(adu[len(mbapBytes):], pduBytes)
 
-	// Send PDU
-	if _, err := t.conn.Write(pduBytes); err != nil {
-		return fmt.Errorf("failed to write PDU: %w", err)
+	if _, err := t.conn.Write(adu); err != nil {
+		return fmt.Errorf("failed to write ADU: %w", err)
 	}
 
 	return nil
@@ -335,6 +335,11 @@ func (t *TCPTransport) receiveADU() (*MBAPHeader, *pdu.PDU, error) {
 	header, err := DecodeMBAP(headerBytes)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to decode MBAP header: %w", err)
+	}
+
+	// Validate protocol ID
+	if header.ProtocolID != modbus.MBAPProtocolID {
+		return nil, nil, fmt.Errorf("invalid MBAP protocol ID: expected 0x%04X, got 0x%04X", modbus.MBAPProtocolID, header.ProtocolID)
 	}
 
 	// Validate length

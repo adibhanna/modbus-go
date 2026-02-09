@@ -667,7 +667,8 @@ func NewASCIITransport(config SerialConfig) *SerialTransport
 
 ```go
 // Connect and read registers
-client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+client := modbus.NewTCPClient("192.168.1.100:502")
+client.SetSlaveID(1)
 defer client.Close()
 
 // Read 10 holding registers starting at address 100
@@ -752,6 +753,6 @@ go func() {
 
 ## Version
 
-Current version: 1.0.0
+Current version: 1.3.0
 
 Supports MODBUS Application Protocol Specification V1.1b3

@@ -83,10 +83,8 @@ import (
 
 func main() {
     // Connect to MODBUS TCP server
-    client, err := modbus.NewTCPClient("localhost:502", 1)
-    if err != nil {
-        log.Fatal(err)
-    }
+    client := modbus.NewTCPClient("localhost:502")
+    client.SetSlaveID(1)
     defer client.Close()
 
     // Read holding registers
@@ -480,7 +478,8 @@ client, err := modbus.NewTCPClientFromJSONFile("my-device-config.json", "192.168
 The client supports automatic reconnection when the connection is lost:
 
 ```go
-client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+client := modbus.NewTCPClient("192.168.1.100:502")
+client.SetSlaveID(1)
 defer client.Close()
 
 // Enable auto-reconnect
@@ -505,7 +504,8 @@ if client.GetAutoReconnect() {
 MODBUS supports broadcast messages (slave ID 0) for write operations where no response is expected:
 
 ```go
-client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+client := modbus.NewTCPClient("192.168.1.100:502")
+client.SetSlaveID(1)
 defer client.Close()
 
 // Broadcast write single coil to all devices
@@ -609,7 +609,8 @@ wg.Wait()
 The library provides convenient methods for reading and writing multi-register data types:
 
 ```go
-client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+client := modbus.NewTCPClient("192.168.1.100:502")
+client.SetSlaveID(1)
 defer client.Close()
 
 // Read/Write 32-bit integers (uses 2 registers)
@@ -660,7 +661,8 @@ inputUint32, err := client.ReadInputUint32(1000)
 Different devices use different byte/word ordering. Configure the encoding to match your device:
 
 ```go
-client, _ := modbus.NewTCPClient("192.168.1.100:502", 1)
+client := modbus.NewTCPClient("192.168.1.100:502")
+client.SetSlaveID(1)
 
 // Default is Big Endian, High Word First (most common in MODBUS)
 // This is the standard MODBUS byte order
@@ -1127,7 +1129,8 @@ vendorName, productCode, version, err := client.ReadDeviceIdentification(
 
 ```go
 // Basic TCP client
-client, err := modbus.NewTCPClient("192.168.1.100:502", 1)
+client := modbus.NewTCPClient("192.168.1.100:502")
+client.SetSlaveID(1)
 
 // With custom configuration
 config := modbus.ClientConfig{
@@ -1619,10 +1622,8 @@ func TestClientServerIntegration(t *testing.T) {
     time.Sleep(100 * time.Millisecond)
     
     // Create client
-    client, err := modbus.NewTCPClient("localhost:15502", 1)
-    if err != nil {
-        t.Fatal(err)
-    }
+    client := modbus.NewTCPClient("localhost:15502")
+    client.SetSlaveID(1)
     defer client.Close()
     
     // Test write and read
@@ -1677,11 +1678,8 @@ func TestConcurrentAccess(t *testing.T) {
         go func(id int) {
             defer wg.Done()
             
-            client, err := modbus.NewTCPClient("localhost:25502", uint8(id))
-            if err != nil {
-                errors <- err
-                return
-            }
+            client := modbus.NewTCPClient("localhost:25502")
+            client.SetSlaveID(uint8(id))
             defer client.Close()
             
             // Perform operations

@@ -60,10 +60,8 @@ import (
 
 func main() {
     // Connect to MODBUS TCP server
-    client, err := modbus.NewTCPClient("192.168.1.100:502", 1)
-    if err != nil {
-        log.Fatal(err)
-    }
+    client := modbus.NewTCPClient("192.168.1.100:502")
+    client.SetSlaveID(1)
     defer client.Close()
 
     // Read 10 holding registers starting from address 100
